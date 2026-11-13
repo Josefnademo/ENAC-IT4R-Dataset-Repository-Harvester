@@ -1,0 +1,17 @@
+{
+  "dc.type:model": {
+    "total": 77,
+    "sampled": 20
+  },
+  "dc.type:workflow": {
+    "total": 0,
+    "sampled": 0
+  },
+  "dc.type:technicalreport": {
+    "total": 0,
+    "sampled": 0
+  },
+  "observed_types": {
+    "patent::utility model": 20
+  }
+}

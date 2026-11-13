@@ -1,0 +1,4321 @@
+{
+  "generated_utc": "2026-11-10T08:07:36+00:00",
+  "environment": {
+    "python": "3.14.10",
+    "requests": "2.34.2",
+    "curl_transport": "C:\\windows\\system32\\curl.EXE",
+    "clock_utc": "2026-11-10 08:07:36Z",
+    "host_platform": "win32"
+  },
+  "probes": [
+    {
+      "id": "Z-01",
+      "service": "zenodo",
+      "purpose": "Baseline - no query filter (whole EPFL community)",
+      "url": "https://zenodo.org/api/communities/epfl/records?size=5&sort=newest&page=1",
+      "params": {
+        "size": 5,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 336,
+      "total_hits": 512,
+      "returned": 5,
+      "verdict": "OK - community scope applied server-side",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:03:25 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "17",
+        "x-ratelimit-reset": "1794297834",
+        "retry-after": "28"
+      },
+      "timestamp": "2026-11-10T08:03:25+00:00",
+      "sample_ids": [
+        24057096,
+        24056930,
+        24053293,
+        20840785,
+        23890101
+      ],
+      "window_check": [
+        {
+          "id": 24057096,
+          "created": "2026-11-08T17:10:00.163863+00:00",
+          "publication_date": "2026-11-08",
+          "resource_type": "software"
+        },
+        {
+          "id": 24056930,
+          "created": "2026-11-08T16:59:42.885605+00:00",
+          "publication_date": "2026-11-08",
+          "resource_type": "software"
+        },
+        {
+          "id": 24053293,
+          "created": "2026-11-08T12:30:07.640152+00:00",
+          "publication_date": "2026-11-08",
+          "resource_type": "software"
+        }
+      ]
+    },
+    {
+      "id": "Z-02",
+      "service": "zenodo",
+      "purpose": "Type filter - q=resource_type.type:dataset",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=5&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 5,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 379,
+      "total_hits": 346,
+      "returned": 5,
+      "verdict": "OK - datasets only",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:03:28 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "15",
+        "x-ratelimit-reset": "1794297834",
+        "retry-after": "25"
+      },
+      "timestamp": "2026-11-10T08:03:28+00:00",
+      "sample_ids": [
+        20840785,
+        23345145,
+        23190655,
+        23209677,
+        23015391
+      ],
+      "window_check": [
+        {
+          "id": 20840785,
+          "created": "2026-11-05T15:09:57.965664+00:00",
+          "publication_date": "2026-06-25",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23345145,
+          "created": "2026-10-15T09:55:27.646359+00:00",
+          "publication_date": "2026-10-13",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23190655,
+          "created": "2026-10-07T15:25:48.228200+00:00",
+          "publication_date": "2026-10-06",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-03",
+      "service": "zenodo",
+      "purpose": "Type filter - q=resource_type.type:software",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Asoftware&size=5&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:software",
+        "size": 5,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 939,
+      "total_hits": 49,
+      "returned": 5,
+      "verdict": "OK - software only",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:03:31 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "13",
+        "x-ratelimit-reset": "1794297834",
+        "retry-after": "22"
+      },
+      "timestamp": "2026-11-10T08:03:31+00:00",
+      "sample_ids": [
+        24057096,
+        24056930,
+        24053293,
+        23890101,
+        23162888
+      ],
+      "window_check": [
+        {
+          "id": 24057096,
+          "created": "2026-11-08T17:10:00.163863+00:00",
+          "publication_date": "2026-11-08",
+          "resource_type": "software"
+        },
+        {
+          "id": 24056930,
+          "created": "2026-11-08T16:59:42.885605+00:00",
+          "publication_date": "2026-11-08",
+          "resource_type": "software"
+        },
+        {
+          "id": 24053293,
+          "created": "2026-11-08T12:30:07.640152+00:00",
+          "publication_date": "2026-11-08",
+          "resource_type": "software"
+        }
+      ]
+    },
+    {
+      "id": "Z-04/last_90d",
+      "service": "zenodo",
+      "purpose": "Window discovery (rolling last 90 days) - resource_type.type:dataset AND created:[...]",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+created%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset AND created:[2026-08-12 TO 2026-11-10]",
+        "size": 5,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 215,
+      "total_hits": 11,
+      "returned": 5,
+      "verdict": "window probe",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:03:33 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "11",
+        "x-ratelimit-reset": "1794297834",
+        "retry-after": "20"
+      },
+      "timestamp": "2026-11-10T08:03:33+00:00",
+      "sample_ids": [
+        20840785,
+        23345145,
+        23190655,
+        23209677,
+        23015391
+      ],
+      "window_check": [
+        {
+          "id": 20840785,
+          "created": "2026-11-05T15:09:57.965664+00:00",
+          "publication_date": "2026-06-25",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23345145,
+          "created": "2026-10-15T09:55:27.646359+00:00",
+          "publication_date": "2026-10-13",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23190655,
+          "created": "2026-10-07T15:25:48.228200+00:00",
+          "publication_date": "2026-10-06",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-05",
+      "service": "zenodo",
+      "purpose": "Date filter - created:[from TO to] (record creation date)",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+created%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset AND created:[2026-08-12 TO 2026-11-10]",
+        "size": 5,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 204,
+      "total_hits": 11,
+      "returned": 5,
+      "verdict": "Lucene range on system field",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:03:36 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "9",
+        "x-ratelimit-reset": "1794297834",
+        "retry-after": "17"
+      },
+      "timestamp": "2026-11-10T08:03:36+00:00",
+      "sample_ids": [
+        20840785,
+        23345145,
+        23190655,
+        23209677,
+        23015391
+      ],
+      "window_check": [
+        {
+          "id": 20840785,
+          "created": "2026-11-05T15:09:57.965664+00:00",
+          "publication_date": "2026-06-25",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23345145,
+          "created": "2026-10-15T09:55:27.646359+00:00",
+          "publication_date": "2026-10-13",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23190655,
+          "created": "2026-10-07T15:25:48.228200+00:00",
+          "publication_date": "2026-10-06",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-06",
+      "service": "zenodo",
+      "purpose": "Date filter - metadata.publication_date:[from TO to]",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+metadata.publication_date%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset AND metadata.publication_date:[2026-08-12 TO 2026-11-10]",
+        "size": 5,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 640,
+      "total_hits": 9,
+      "returned": 5,
+      "verdict": "Lucene range on metadata field",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:03:39 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "6",
+        "x-ratelimit-reset": "1794297834",
+        "retry-after": "14"
+      },
+      "timestamp": "2026-11-10T08:03:39+00:00",
+      "sample_ids": [
+        23345145,
+        23190655,
+        23209677,
+        23015391,
+        22768812
+      ],
+      "window_check": [
+        {
+          "id": 23345145,
+          "created": "2026-10-15T09:55:27.646359+00:00",
+          "publication_date": "2026-10-13",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23190655,
+          "created": "2026-10-07T15:25:48.228200+00:00",
+          "publication_date": "2026-10-06",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23209677,
+          "created": "2026-10-07T10:13:05.173452+00:00",
+          "publication_date": "2026-10-07",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-07",
+      "service": "zenodo",
+      "purpose": "Date filter - publication_date:[from TO to] (no metadata. prefix)",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+publication_date%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset AND publication_date:[2026-08-12 TO 2026-11-10]",
+        "size": 5,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 254,
+      "total_hits": 9,
+      "returned": 5,
+      "verdict": "syntax comparison",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:03:41 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "5",
+        "x-ratelimit-reset": "1794297834",
+        "retry-after": "12"
+      },
+      "timestamp": "2026-11-10T08:03:41+00:00",
+      "sample_ids": [
+        23345145,
+        23190655,
+        23209677,
+        23015391,
+        22768812
+      ],
+      "window_check": [
+        {
+          "id": 23345145,
+          "created": "2026-10-15T09:55:27.646359+00:00",
+          "publication_date": "2026-10-13",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23190655,
+          "created": "2026-10-07T15:25:48.228200+00:00",
+          "publication_date": "2026-10-06",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23209677,
+          "created": "2026-10-07T10:13:05.173452+00:00",
+          "publication_date": "2026-10-07",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-08",
+      "service": "zenodo",
+      "purpose": "Date filter alone - created:[from TO to] with no type filter",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=created%3A%5B2026-08-12+TO+2026-11-10%5D&size=3&sort=newest&page=1",
+      "params": {
+        "q": "created:[2026-08-12 TO 2026-11-10]",
+        "size": 3,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 257,
+      "total_hits": 17,
+      "returned": 3,
+      "verdict": "syntax comparison",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:03:44 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "3",
+        "x-ratelimit-reset": "1794297834",
+        "retry-after": "9"
+      },
+      "timestamp": "2026-11-10T08:03:44+00:00",
+      "sample_ids": [
+        24057096,
+        24056930,
+        24053293
+      ],
+      "window_check": [
+        {
+          "id": 24057096,
+          "created": "2026-11-08T17:10:00.163863+00:00",
+          "publication_date": "2026-11-08",
+          "resource_type": "software"
+        },
+        {
+          "id": 24056930,
+          "created": "2026-11-08T16:59:42.885605+00:00",
+          "publication_date": "2026-11-08",
+          "resource_type": "software"
+        },
+        {
+          "id": 24053293,
+          "created": "2026-11-08T12:30:07.640152+00:00",
+          "publication_date": "2026-11-08",
+          "resource_type": "software"
+        }
+      ]
+    },
+    {
+      "id": "Z-09/10",
+      "service": "zenodo",
+      "purpose": "Page size probe - size=10",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=10&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 10,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 282,
+      "total_hits": 346,
+      "returned": 10,
+      "verdict": "size accepted",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:11 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "8",
+        "x-ratelimit-reset": "1794297854",
+        "retry-after": "2"
+      },
+      "timestamp": "2026-11-10T08:04:11+00:00",
+      "sample_ids": [
+        20840785,
+        23345145,
+        23190655,
+        23209677,
+        23015391
+      ],
+      "window_check": [
+        {
+          "id": 20840785,
+          "created": "2026-11-05T15:09:57.965664+00:00",
+          "publication_date": "2026-06-25",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23345145,
+          "created": "2026-10-15T09:55:27.646359+00:00",
+          "publication_date": "2026-10-13",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23190655,
+          "created": "2026-10-07T15:25:48.228200+00:00",
+          "publication_date": "2026-10-06",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-09/25",
+      "service": "zenodo",
+      "purpose": "Page size probe - size=25",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=25&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 25,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1440,
+      "total_hits": 346,
+      "returned": 25,
+      "verdict": "size accepted",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:15 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "7",
+        "x-ratelimit-reset": "1794297857",
+        "retry-after": "1"
+      },
+      "timestamp": "2026-11-10T08:04:15+00:00",
+      "sample_ids": [
+        20840785,
+        23345145,
+        23190655,
+        23209677,
+        23015391
+      ],
+      "window_check": [
+        {
+          "id": 20840785,
+          "created": "2026-11-05T15:09:57.965664+00:00",
+          "publication_date": "2026-06-25",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23345145,
+          "created": "2026-10-15T09:55:27.646359+00:00",
+          "publication_date": "2026-10-13",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23190655,
+          "created": "2026-10-07T15:25:48.228200+00:00",
+          "publication_date": "2026-10-06",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-09/50",
+      "service": "zenodo",
+      "purpose": "Page size probe - size=50",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=50&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 50,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 400,
+      "transport": "requests",
+      "elapsed_ms": 106,
+      "total_hits": null,
+      "returned": 0,
+      "verdict": "HTTP 400 - rejected",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:17 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "7",
+        "x-ratelimit-reset": "1794297859",
+        "retry-after": "1"
+      },
+      "timestamp": "2026-11-10T08:04:17+00:00",
+      "error_body": "size: Page size cannot be greater than 25. Please use authenticated requests to increase the limit to 100."
+    },
+    {
+      "id": "Z-09/100",
+      "service": "zenodo",
+      "purpose": "Page size probe - size=100",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=100&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 100,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 400,
+      "transport": "requests",
+      "elapsed_ms": 101,
+      "total_hits": null,
+      "returned": 0,
+      "verdict": "HTTP 400 - rejected",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:19 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "7",
+        "x-ratelimit-reset": "1794297863",
+        "retry-after": "3"
+      },
+      "timestamp": "2026-11-10T08:04:19+00:00",
+      "error_body": "size: Page size cannot be greater than 25. Please use authenticated requests to increase the limit to 100."
+    },
+    {
+      "id": "Z-09/200",
+      "service": "zenodo",
+      "purpose": "Page size probe - size=200",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=200&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 200,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 400,
+      "transport": "requests",
+      "elapsed_ms": 107,
+      "total_hits": null,
+      "returned": 0,
+      "verdict": "HTTP 400 - rejected",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:22 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "6",
+        "x-ratelimit-reset": "1794297863",
+        "retry-after": "0"
+      },
+      "timestamp": "2026-11-10T08:04:22+00:00",
+      "error_body": "size: Page size cannot be greater than 25. Please use authenticated requests to increase the limit to 100."
+    },
+    {
+      "id": "Z-09/1000",
+      "service": "zenodo",
+      "purpose": "Page size probe - size=1000",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=1000&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 1000,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 400,
+      "transport": "requests",
+      "elapsed_ms": 111,
+      "total_hits": null,
+      "returned": 0,
+      "verdict": "HTTP 400 - rejected",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:24 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "6",
+        "x-ratelimit-reset": "1794297865",
+        "retry-after": "0"
+      },
+      "timestamp": "2026-11-10T08:04:24+00:00",
+      "error_body": "size: Page size cannot be greater than 25. Please use authenticated requests to increase the limit to 100."
+    },
+    {
+      "id": "Z-10/page=0",
+      "service": "zenodo",
+      "purpose": "Page index probe - page=0",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=3&sort=newest&page=0",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 3,
+        "sort": "newest",
+        "page": 0
+      },
+      "status": 400,
+      "transport": "requests",
+      "elapsed_ms": 306,
+      "total_hits": null,
+      "returned": 0,
+      "verdict": "HTTP 400 - rejected",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:26 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "7",
+        "x-ratelimit-reset": "1794297868",
+        "retry-after": "1"
+      },
+      "timestamp": "2026-11-10T08:04:26+00:00",
+      "error_body": "page: Must be greater than or equal to 1."
+    },
+    {
+      "id": "Z-10/page=1",
+      "service": "zenodo",
+      "purpose": "Page index probe - page=1",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=3&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 3,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1017,
+      "total_hits": 346,
+      "returned": 3,
+      "verdict": "page numbering check",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:30 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "9",
+        "x-ratelimit-reset": "1794297871",
+        "retry-after": "0"
+      },
+      "timestamp": "2026-11-10T08:04:30+00:00",
+      "sample_ids": [
+        20840785,
+        23345145,
+        23190655
+      ],
+      "window_check": [
+        {
+          "id": 20840785,
+          "created": "2026-11-05T15:09:57.965664+00:00",
+          "publication_date": "2026-06-25",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23345145,
+          "created": "2026-10-15T09:55:27.646359+00:00",
+          "publication_date": "2026-10-13",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23190655,
+          "created": "2026-10-07T15:25:48.228200+00:00",
+          "publication_date": "2026-10-06",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-10/page=2",
+      "service": "zenodo",
+      "purpose": "Page index probe - page=2",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=3&sort=newest&page=2",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 3,
+        "sort": "newest",
+        "page": 2
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 286,
+      "total_hits": 346,
+      "returned": 3,
+      "verdict": "page numbering check",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:32 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "10",
+        "x-ratelimit-reset": "1794297874",
+        "retry-after": "1"
+      },
+      "timestamp": "2026-11-10T08:04:32+00:00",
+      "sample_ids": [
+        23209677,
+        23015391,
+        22768812
+      ],
+      "window_check": [
+        {
+          "id": 23209677,
+          "created": "2026-10-07T10:13:05.173452+00:00",
+          "publication_date": "2026-10-07",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23015391,
+          "created": "2026-09-29T07:02:23.136825+00:00",
+          "publication_date": "2026-09-28",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 22768812,
+          "created": "2026-09-15T12:30:37.930612+00:00",
+          "publication_date": "2026-09-15",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-11/bestmatch",
+      "service": "zenodo",
+      "purpose": "Sort syntax probe - sort=bestmatch",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=3&sort=bestmatch&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 3,
+        "sort": "bestmatch",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 286,
+      "total_hits": 346,
+      "returned": 3,
+      "verdict": "sort accepted",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:44 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "15",
+        "x-ratelimit-reset": "1794297885",
+        "retry-after": "0"
+      },
+      "timestamp": "2026-11-10T08:04:44+00:00",
+      "sample_ids": [
+        3820297,
+        3460877,
+        3367270
+      ],
+      "window_check": [
+        {
+          "id": 3820297,
+          "created": "2020-05-11T15:29:58.434048+00:00",
+          "publication_date": "2020-05-11",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 3460877,
+          "created": "2019-09-25T16:24:37.760928+00:00",
+          "publication_date": "2019-09-25",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 3367270,
+          "created": "2019-08-13T14:01:46.406751+00:00",
+          "publication_date": "2019-08-13",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-11/mostrecent",
+      "service": "zenodo",
+      "purpose": "Sort syntax probe - sort=mostrecent",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=3&sort=mostrecent&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 3,
+        "sort": "mostrecent",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 190,
+      "total_hits": 346,
+      "returned": 3,
+      "verdict": "sort accepted",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:38 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "12",
+        "x-ratelimit-reset": "1794297879",
+        "retry-after": "0"
+      },
+      "timestamp": "2026-11-10T08:04:38+00:00",
+      "sample_ids": [
+        20840785,
+        23345145,
+        23190655
+      ],
+      "window_check": [
+        {
+          "id": 20840785,
+          "created": "2026-11-05T15:09:57.965664+00:00",
+          "publication_date": "2026-06-25",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23345145,
+          "created": "2026-10-15T09:55:27.646359+00:00",
+          "publication_date": "2026-10-13",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23190655,
+          "created": "2026-10-07T15:25:48.228200+00:00",
+          "publication_date": "2026-10-06",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-11/newest",
+      "service": "zenodo",
+      "purpose": "Sort syntax probe - sort=newest",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=3&sort=newest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 3,
+        "sort": "newest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 888,
+      "total_hits": 346,
+      "returned": 3,
+      "verdict": "sort accepted",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:35 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "11",
+        "x-ratelimit-reset": "1794297877",
+        "retry-after": "1"
+      },
+      "timestamp": "2026-11-10T08:04:35+00:00",
+      "sample_ids": [
+        20840785,
+        23345145,
+        23190655
+      ],
+      "window_check": [
+        {
+          "id": 20840785,
+          "created": "2026-11-05T15:09:57.965664+00:00",
+          "publication_date": "2026-06-25",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23345145,
+          "created": "2026-10-15T09:55:27.646359+00:00",
+          "publication_date": "2026-10-13",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 23190655,
+          "created": "2026-10-07T15:25:48.228200+00:00",
+          "publication_date": "2026-10-06",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "Z-11/oldest",
+      "service": "zenodo",
+      "purpose": "Sort syntax probe - sort=oldest",
+      "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=3&sort=oldest&page=1",
+      "params": {
+        "q": "resource_type.type:dataset",
+        "size": 3,
+        "sort": "oldest",
+        "page": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1438,
+      "total_hits": 346,
+      "returned": 3,
+      "verdict": "sort accepted",
+      "note": "",
+      "rate_headers": {
+        "server": "nginx",
+        "date": "Tue, 10 Nov 2026 08:04:41 GMT",
+        "x-ratelimit-limit": "30",
+        "x-ratelimit-remaining": "14",
+        "x-ratelimit-reset": "1794297883",
+        "retry-after": "1"
+      },
+      "timestamp": "2026-11-10T08:04:41+00:00",
+      "sample_ids": [
+        7527,
+        8443,
+        12873
+      ],
+      "window_check": [
+        {
+          "id": 7527,
+          "created": "2014-03-10T17:38:55+00:00",
+          "publication_date": "2013-10-31",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 8443,
+          "created": "2014-11-24T08:28:45+00:00",
+          "publication_date": "2014-02-26",
+          "resource_type": "dataset"
+        },
+        {
+          "id": 12873,
+          "created": "2014-11-27T08:58:17+00:00",
+          "publication_date": "2014-11-25",
+          "resource_type": "dataset"
+        }
+      ]
+    },
+    {
+      "id": "I-01",
+      "service": "infoscience",
+      "purpose": "Datasets - query=dc.type:dataset (25 objects, also used for the audit)",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&sort=dc.date.accessioned%2Cdesc&page=0&query=dc.type%3Adataset&size=25",
+      "params": {
+        "configuration": "researchoutputs",
+        "sort": "dc.date.accessioned,desc",
+        "page": 0,
+        "query": "dc.type:dataset",
+        "size": 25
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1017,
+      "total_hits": 396,
+      "returned": 25,
+      "page": {
+        "number": 0,
+        "size": 25,
+        "totalPages": 16,
+        "totalElements": 396
+      },
+      "verdict": "Solr field query accepted",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:17:02 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 941907c0235c9157ae24d554d9d6ef2e.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:17:02+00:00",
+      "sample_handles": [
+        "20.500.14299/269054",
+        "20.500.14299/268377",
+        "20.500.14299/268122",
+        "20.500.14299/267349",
+        "20.500.14299/267258"
+      ],
+      "sample_types": [
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset"
+      ],
+      "objects_kept_in_raw": 25
+    },
+    {
+      "id": "I-02",
+      "service": "infoscience",
+      "purpose": "Type filter - query=dc.type:software",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&sort=dc.date.accessioned%2Cdesc&page=0&query=dc.type%3Asoftware&size=1",
+      "params": {
+        "configuration": "researchoutputs",
+        "sort": "dc.date.accessioned,desc",
+        "page": 0,
+        "query": "dc.type:software",
+        "size": 1
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 983,
+      "total_hits": 25,
+      "returned": 1,
+      "page": {
+        "number": 0,
+        "size": 1,
+        "totalPages": 25,
+        "totalElements": 25
+      },
+      "verdict": "Solr field query accepted",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:17:15 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 6c283cf0e4c864bce9fae3617ee6e6ee.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:17:15+00:00",
+      "sample_handles": [
+        "20.500.14299/268376"
+      ],
+      "sample_types": [
+        "software"
+      ]
+    },
+    {
+      "id": "I-03",
+      "service": "infoscience",
+      "purpose": "Baseline - configuration=researchoutputs with no query",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=%2A&size=1&page=0",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "*",
+        "size": 1,
+        "page": 0
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1180,
+      "total_hits": 197730,
+      "returned": 1,
+      "page": {
+        "number": 0,
+        "size": 1,
+        "totalPages": 197730,
+        "totalElements": 197730
+      },
+      "verdict": "Baseline count for the researchoutputs configuration",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:17:28 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 3591be88662e5675a9dc1cc4e0a9c392.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:17:28+00:00",
+      "sample_handles": [
+        "20.500.14299/269043"
+      ],
+      "sample_types": [
+        "text::journal::journal article::research article"
+      ]
+    },
+    {
+      "id": "I-05/100",
+      "service": "infoscience",
+      "purpose": "Page size probe - size=100",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset&size=100&page=0",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "dc.type:dataset",
+        "size": 100,
+        "page": 0
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1623,
+      "total_hits": 396,
+      "returned": 100,
+      "page": {
+        "number": 0,
+        "size": 100,
+        "totalPages": 4,
+        "totalElements": 396
+      },
+      "verdict": "page size cap probe",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:17:41 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 198faa69aef335f43fd8dab2dc579a8e.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:17:42+00:00",
+      "sample_handles": [
+        "20.500.14299/248138",
+        "20.500.14299/241041",
+        "20.500.14299/265992",
+        "20.500.14299/265914",
+        "20.500.14299/193200"
+      ],
+      "sample_types": [
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset"
+      ]
+    },
+    {
+      "id": "I-05/200",
+      "service": "infoscience",
+      "purpose": "Page size probe - size=200",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset&size=200&page=0",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "dc.type:dataset",
+        "size": 200,
+        "page": 0
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1346,
+      "total_hits": 396,
+      "returned": 100,
+      "page": {
+        "number": 0,
+        "size": 200,
+        "totalPages": 2,
+        "totalElements": 396
+      },
+      "verdict": "page size cap probe",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:17:55 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 6f416aa4cef6162ee99c949a7aae323a.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:17:55+00:00",
+      "sample_handles": [
+        "20.500.14299/248138",
+        "20.500.14299/241041",
+        "20.500.14299/265992",
+        "20.500.14299/265914",
+        "20.500.14299/193200"
+      ],
+      "sample_types": [
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset"
+      ]
+    },
+    {
+      "id": "I-06/page=0",
+      "service": "infoscience",
+      "purpose": "Page index probe - page=0",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset&size=2&page=0&sort=dc.date.accessioned%2Cdesc",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "dc.type:dataset",
+        "size": 2,
+        "page": 0,
+        "sort": "dc.date.accessioned,desc"
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1084,
+      "total_hits": 396,
+      "returned": 2,
+      "page": {
+        "number": 0,
+        "size": 2,
+        "totalPages": 198,
+        "totalElements": 396
+      },
+      "verdict": "page numbering check",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:18:08 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 3b9bc30854f4e71bb0e665c24e7125ba.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:18:08+00:00",
+      "sample_handles": [
+        "20.500.14299/269054",
+        "20.500.14299/268377"
+      ],
+      "sample_types": [
+        "dataset",
+        "dataset"
+      ]
+    },
+    {
+      "id": "I-06/page=1",
+      "service": "infoscience",
+      "purpose": "Page index probe - page=1",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset&size=2&page=1&sort=dc.date.accessioned%2Cdesc",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "dc.type:dataset",
+        "size": 2,
+        "page": 1,
+        "sort": "dc.date.accessioned,desc"
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1046,
+      "total_hits": 396,
+      "returned": 2,
+      "page": {
+        "number": 1,
+        "size": 2,
+        "totalPages": 198,
+        "totalElements": 396
+      },
+      "verdict": "page numbering check",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:18:21 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 bc15df0ddd2cf5735a630c71c367efec.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:18:21+00:00",
+      "sample_handles": [
+        "20.500.14299/268122",
+        "20.500.14299/267349"
+      ],
+      "sample_types": [
+        "dataset",
+        "dataset"
+      ]
+    },
+    {
+      "id": "I-06b/size=100&page=2",
+      "service": "infoscience",
+      "purpose": "Offset check - size=100&page=2",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset&size=100&page=2&sort=dc.date.accessioned%2Cdesc",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "dc.type:dataset",
+        "size": 100,
+        "page": 2,
+        "sort": "dc.date.accessioned,desc"
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1965,
+      "total_hits": 396,
+      "returned": 100,
+      "page": {
+        "number": 2,
+        "size": 100,
+        "totalPages": 4,
+        "totalElements": 396
+      },
+      "verdict": "offset semantics check",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:18:49 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 f10af19edfcce00892eb35856b1c5d66.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:18:49+00:00",
+      "sample_handles": [
+        "20.500.14299/206126",
+        "20.500.14299/206124",
+        "20.500.14299/206123",
+        "20.500.14299/206122",
+        "20.500.14299/206121"
+      ],
+      "sample_types": [
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset"
+      ]
+    },
+    {
+      "id": "I-06b/size=200&page=1",
+      "service": "infoscience",
+      "purpose": "Offset check - size=200&page=1",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset&size=200&page=1&sort=dc.date.accessioned%2Cdesc",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "dc.type:dataset",
+        "size": 200,
+        "page": 1,
+        "sort": "dc.date.accessioned,desc"
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1424,
+      "total_hits": 300,
+      "returned": 100,
+      "page": {
+        "number": 1,
+        "size": 200,
+        "totalPages": 2,
+        "totalElements": 300
+      },
+      "verdict": "offset semantics check",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:18:35 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 7b1453554724e38e8ddaa890cda58f10.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:18:35+00:00",
+      "sample_handles": [
+        "20.500.14299/206126",
+        "20.500.14299/206124",
+        "20.500.14299/206123",
+        "20.500.14299/206122",
+        "20.500.14299/206121"
+      ],
+      "sample_types": [
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset"
+      ]
+    },
+    {
+      "id": "I-07/last_90d",
+      "service": "infoscience",
+      "purpose": "Date window probe (rolling last 90 days) - dc.type:dataset AND dc.date.issued:[...]",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.issued%3A%5B2026-08-11+TO+2026-11-09%5D&size=2&page=0&sort=dc.date.issued%2Cdesc",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "dc.type:dataset AND dc.date.issued:[2026-08-11 TO 2026-11-09]",
+        "size": 2,
+        "page": 0,
+        "sort": "dc.date.issued,desc"
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1318,
+      "total_hits": 0,
+      "returned": 0,
+      "page": {
+        "number": 0,
+        "size": 2,
+        "totalPages": 0,
+        "totalElements": 0
+      },
+      "verdict": "Solr range query on dc.date.issued",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:19:02 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 3b9bc30854f4e71bb0e665c24e7125ba.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:19:02+00:00"
+    },
+    {
+      "id": "I-07/last_365d",
+      "service": "infoscience",
+      "purpose": "Date window probe (rolling last 365 days) - dc.type:dataset AND dc.date.issued:[...]",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.issued%3A%5B2025-11-09+TO+2026-11-09%5D&size=2&page=0&sort=dc.date.issued%2Cdesc",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "dc.type:dataset AND dc.date.issued:[2025-11-09 TO 2026-11-09]",
+        "size": 2,
+        "page": 0,
+        "sort": "dc.date.issued,desc"
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1199,
+      "total_hits": 47,
+      "returned": 2,
+      "page": {
+        "number": 0,
+        "size": 2,
+        "totalPages": 24,
+        "totalElements": 47
+      },
+      "verdict": "Solr range query on dc.date.issued",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:19:15 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 f10af19edfcce00892eb35856b1c5d66.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:19:15+00:00",
+      "sample_handles": [
+        "20.500.14299/266790",
+        "20.500.14299/264928"
+      ],
+      "sample_types": [
+        "dataset",
+        "dataset::simulation data"
+      ]
+    },
+    {
+      "id": "I-08",
+      "service": "infoscience",
+      "purpose": "Date window on issued date - dc.type:dataset AND dc.date.issued:[from TO to]",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.issued%3A%5B2025-11-09+TO+2026-11-09%5D&size=5&page=0&sort=dc.date.issued%2Cdesc",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "dc.type:dataset AND dc.date.issued:[2025-11-09 TO 2026-11-09]",
+        "size": 5,
+        "page": 0,
+        "sort": "dc.date.issued,desc"
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 468,
+      "total_hits": 47,
+      "returned": 5,
+      "page": {
+        "number": 0,
+        "size": 5,
+        "totalPages": 10,
+        "totalElements": 47
+      },
+      "verdict": "Solr range query",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:19:28 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 6f416aa4cef6162ee99c949a7aae323a.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:19:28+00:00",
+      "sample_handles": [
+        "20.500.14299/266790",
+        "20.500.14299/264928",
+        "20.500.14299/264929",
+        "20.500.14299/264930",
+        "20.500.14299/263158"
+      ],
+      "sample_types": [
+        "dataset",
+        "dataset::simulation data",
+        "dataset::simulation data",
+        "dataset::simulation data",
+        "dataset"
+      ],
+      "objects_kept_in_raw": 1
+    },
+    {
+      "id": "I-09",
+      "service": "infoscience",
+      "purpose": "Date window on accession date - dc.date.accessioned:[from TO to]",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.accessioned%3A%5B2025-11-09+TO+2026-11-09%5D&size=3&page=0&sort=dc.date.accessioned%2Cdesc",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "dc.type:dataset AND dc.date.accessioned:[2025-11-09 TO 2026-11-09]",
+        "size": 3,
+        "page": 0,
+        "sort": "dc.date.accessioned,desc"
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1115,
+      "total_hits": 73,
+      "returned": 3,
+      "page": {
+        "number": 0,
+        "size": 3,
+        "totalPages": 25,
+        "totalElements": 73
+      },
+      "verdict": "Solr range query",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:19:41 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 3b9bc30854f4e71bb0e665c24e7125ba.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:19:41+00:00",
+      "sample_handles": [
+        "20.500.14299/269054",
+        "20.500.14299/268377",
+        "20.500.14299/268122"
+      ],
+      "sample_types": [
+        "dataset",
+        "dataset",
+        "dataset"
+      ]
+    },
+    {
+      "id": "I-10",
+      "service": "infoscience",
+      "purpose": "Field audit - 25 datasets inspected for unit/lab/date/DOI fields",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.issued%3A%5B2025-11-09+TO+2026-11-09%5D&size=25&page=0&sort=dc.date.accessioned%2Cdesc",
+      "params": {
+        "configuration": "researchoutputs",
+        "query": "dc.type:dataset AND dc.date.issued:[2025-11-09 TO 2026-11-09]",
+        "size": 25,
+        "page": 0,
+        "sort": "dc.date.accessioned,desc"
+      },
+      "status": 200,
+      "transport": "requests",
+      "elapsed_ms": 1457,
+      "total_hits": 47,
+      "returned": 25,
+      "page": {
+        "number": 0,
+        "size": 25,
+        "totalPages": 2,
+        "totalElements": 47
+      },
+      "verdict": "Metadata field audit",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:19:54 GMT",
+        "x-cache": "Miss from cloudfront",
+        "via": "1.1 49ffa36aef18f1aca048f1cca2434920.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:19:55+00:00",
+      "sample_handles": [
+        "20.500.14299/269054",
+        "20.500.14299/268377",
+        "20.500.14299/268122",
+        "20.500.14299/267349",
+        "20.500.14299/267258"
+      ],
+      "sample_types": [
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset",
+        "dataset"
+      ],
+      "objects_kept_in_raw": 25
+    },
+    {
+      "id": "I-11/itemtype",
+      "service": "infoscience",
+      "purpose": "Facet filter - f.itemtype=dataset,equals",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&f.itemtype=dataset%2Cequals&size=1&page=0",
+      "params": {
+        "configuration": "researchoutputs",
+        "f.itemtype": "dataset,equals",
+        "size": 1,
+        "page": 0
+      },
+      "status": 400,
+      "transport": "requests",
+      "elapsed_ms": 103,
+      "total_hits": null,
+      "returned": 0,
+      "page": {},
+      "verdict": "HTTP 400 - rejected",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:20:19 GMT",
+        "x-cache": "Error from cloudfront",
+        "via": "1.1 15a25f000172c4183886f5e8d467c1d8.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:20:19+00:00",
+      "error_body": "{\"timestamp\":\"2026-11-09T16:20:19.345+00:00\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"An exception has occurred\",\"path\":\"/server/api/discover/search/objects\"}"
+    },
+    {
+      "id": "I-11/resourceType",
+      "service": "infoscience",
+      "purpose": "Facet filter - f.resourceType=dataset,equals",
+      "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&f.resourceType=dataset%2Cequals&size=1&page=0",
+      "params": {
+        "configuration": "researchoutputs",
+        "f.resourceType": "dataset,equals",
+        "size": 1,
+        "page": 0
+      },
+      "status": 400,
+      "transport": "requests",
+      "elapsed_ms": 130,
+      "total_hits": null,
+      "returned": 0,
+      "page": {},
+      "verdict": "HTTP 400 - rejected",
+      "note": "",
+      "rate_headers": {
+        "date": "Mon, 09 Nov 2026 16:20:07 GMT",
+        "x-cache": "Error from cloudfront",
+        "via": "1.1 6f57fa284b1dcb8bf5f778797a2ba6a8.cloudfront.net (CloudFront)"
+      },
+      "timestamp": "2026-11-09T16:20:07+00:00",
+      "error_body": "{\"timestamp\":\"2026-11-09T16:20:07.233+00:00\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"An exception has occurred\",\"path\":\"/server/api/discover/search/objects\"}"
+    }
+  ],
+  "zenodo": {
+    "endpoint": "https://zenodo.org/api/communities/epfl/records",
+    "api_family": "InvenioRDM (Zenodo)",
+    "probed_utc": "2026-11-10T08:03:25+00:00",
+    "verdict": "PASS - endpoint reachable, 21 live probes, all documented syntaxes reproduced",
+    "date_window": {
+      "key": "last_90d",
+      "label": "rolling last 90 days",
+      "from": "2026-08-12",
+      "to": "2026-11-10"
+    },
+    "query_urls": {
+      "recommended_dataset_window": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+created%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+      "by_created": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+created%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+      "by_publication_date": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+metadata.publication_date%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+      "plain_publication_date": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+publication_date%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+      "datasets_all_time": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=5&sort=newest&page=1"
+    },
+    "totals": {
+      "all_community_records": 512,
+      "datasets_all_time": 346,
+      "software_all_time": 49,
+      "datasets_in_window_by_created": 11,
+      "datasets_in_window_by_publication_date": 9,
+      "datasets_in_window_plain_publication_date": 9,
+      "created_range_without_type_filter": 17
+    },
+    "date_syntax": {
+      "created_range": {
+        "query": "resource_type.type:dataset AND created:[2026-08-12 TO 2026-11-10]",
+        "status": 200,
+        "total_hits": 11,
+        "returned": 5,
+        "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+created%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+        "window_check": [
+          {
+            "id": 20840785,
+            "created": "2026-11-05T15:09:57.965664+00:00",
+            "publication_date": "2026-06-25",
+            "resource_type": "dataset"
+          },
+          {
+            "id": 23345145,
+            "created": "2026-10-15T09:55:27.646359+00:00",
+            "publication_date": "2026-10-13",
+            "resource_type": "dataset"
+          },
+          {
+            "id": 23190655,
+            "created": "2026-10-07T15:25:48.228200+00:00",
+            "publication_date": "2026-10-06",
+            "resource_type": "dataset"
+          }
+        ]
+      },
+      "publication_date_range": {
+        "query": "resource_type.type:dataset AND metadata.publication_date:[2026-08-12 TO 2026-11-10]",
+        "status": 200,
+        "total_hits": 9,
+        "returned": 5,
+        "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+metadata.publication_date%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+        "window_check": [
+          {
+            "id": 23345145,
+            "created": "2026-10-15T09:55:27.646359+00:00",
+            "publication_date": "2026-10-13",
+            "resource_type": "dataset"
+          },
+          {
+            "id": 23190655,
+            "created": "2026-10-07T15:25:48.228200+00:00",
+            "publication_date": "2026-10-06",
+            "resource_type": "dataset"
+          },
+          {
+            "id": 23209677,
+            "created": "2026-10-07T10:13:05.173452+00:00",
+            "publication_date": "2026-10-07",
+            "resource_type": "dataset"
+          }
+        ]
+      },
+      "plain_publication_date_range": {
+        "query": "resource_type.type:dataset AND publication_date:[2026-08-12 TO 2026-11-10]",
+        "status": 200,
+        "total_hits": 9,
+        "returned": 5,
+        "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+publication_date%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+        "window_check": [
+          {
+            "id": 23345145,
+            "created": "2026-10-15T09:55:27.646359+00:00",
+            "publication_date": "2026-10-13",
+            "resource_type": "dataset"
+          },
+          {
+            "id": 23190655,
+            "created": "2026-10-07T15:25:48.228200+00:00",
+            "publication_date": "2026-10-06",
+            "resource_type": "dataset"
+          },
+          {
+            "id": 23209677,
+            "created": "2026-10-07T10:13:05.173452+00:00",
+            "publication_date": "2026-10-07",
+            "resource_type": "dataset"
+          }
+        ]
+      },
+      "created_only": {
+        "query": "created:[2026-08-12 TO 2026-11-10]",
+        "status": 200,
+        "total_hits": 17,
+        "returned": 3,
+        "url": "https://zenodo.org/api/communities/epfl/records?q=created%3A%5B2026-08-12+TO+2026-11-10%5D&size=3&sort=newest&page=1",
+        "window_check": [
+          {
+            "id": 24057096,
+            "created": "2026-11-08T17:10:00.163863+00:00",
+            "publication_date": "2026-11-08",
+            "resource_type": "software"
+          },
+          {
+            "id": 24056930,
+            "created": "2026-11-08T16:59:42.885605+00:00",
+            "publication_date": "2026-11-08",
+            "resource_type": "software"
+          },
+          {
+            "id": 24053293,
+            "created": "2026-11-08T12:30:07.640152+00:00",
+            "publication_date": "2026-11-08",
+            "resource_type": "software"
+          }
+        ]
+      }
+    },
+    "type_syntax": {
+      "baseline_all": {
+        "status": 200,
+        "total_hits": 512,
+        "url": "https://zenodo.org/api/communities/epfl/records?size=5&sort=newest&page=1"
+      },
+      "datasets": {
+        "query": "resource_type.type:dataset",
+        "status": 200,
+        "total_hits": 346,
+        "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=5&sort=newest&page=1",
+        "observed_types": [
+          "dataset",
+          "dataset",
+          "dataset"
+        ]
+      },
+      "software": {
+        "query": "resource_type.type:software",
+        "status": 200,
+        "total_hits": 49,
+        "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Asoftware&size=5&sort=newest&page=1",
+        "observed_types": [
+          "software",
+          "software",
+          "software"
+        ]
+      }
+    },
+    "page_size": {
+      "matrix": [
+        {
+          "requested_size": 10,
+          "status": 200,
+          "returned": 10,
+          "accepted": true,
+          "capped": false,
+          "note": "size accepted",
+          "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=10&sort=newest&page=1"
+        },
+        {
+          "requested_size": 25,
+          "status": 200,
+          "returned": 25,
+          "accepted": true,
+          "capped": false,
+          "note": "size accepted",
+          "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=25&sort=newest&page=1"
+        },
+        {
+          "requested_size": 50,
+          "status": 400,
+          "returned": 0,
+          "accepted": false,
+          "capped": true,
+          "note": "HTTP 400: size: Page size cannot be greater than 25. Please use authenticated requests to increase the limit to 100.",
+          "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=50&sort=newest&page=1"
+        },
+        {
+          "requested_size": 100,
+          "status": 400,
+          "returned": 0,
+          "accepted": false,
+          "capped": true,
+          "note": "HTTP 400: size: Page size cannot be greater than 25. Please use authenticated requests to increase the limit to 100.",
+          "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=100&sort=newest&page=1"
+        },
+        {
+          "requested_size": 200,
+          "status": 400,
+          "returned": 0,
+          "accepted": false,
+          "capped": true,
+          "note": "HTTP 400: size: Page size cannot be greater than 25. Please use authenticated requests to increase the limit to 100.",
+          "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=200&sort=newest&page=1"
+        },
+        {
+          "requested_size": 1000,
+          "status": 400,
+          "returned": 0,
+          "accepted": false,
+          "capped": true,
+          "note": "HTTP 400: size: Page size cannot be greater than 25. Please use authenticated requests to increase the limit to 100.",
+          "url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset&size=1000&sort=newest&page=1"
+        }
+      ],
+      "largest_accepted_request": 25,
+      "max_effective_page_size": 25
+    },
+    "pagination": {
+      "probes": {
+        "0": {
+          "status": 400,
+          "ids": null,
+          "note": "HTTP 400 - rejected",
+          "error_body": "page: Must be greater than or equal to 1."
+        },
+        "1": {
+          "status": 200,
+          "ids": [
+            20840785,
+            23345145,
+            23190655
+          ],
+          "note": "page numbering check",
+          "error_body": null
+        },
+        "2": {
+          "status": 200,
+          "ids": [
+            23209677,
+            23015391,
+            22768812
+          ],
+          "note": "page numbering check",
+          "error_body": null
+        }
+      },
+      "index_base": "1-indexed - page=0 is rejected with HTTP 400",
+      "page_zero_error": "page: Must be greater than or equal to 1.",
+      "first_id_page1": 20840785,
+      "first_id_page2": 23209677
+    },
+    "sort": {
+      "newest": {
+        "status": 200,
+        "ids": [
+          20840785,
+          23345145,
+          23190655
+        ],
+        "note": "sort accepted"
+      },
+      "mostrecent": {
+        "status": 200,
+        "ids": [
+          20840785,
+          23345145,
+          23190655
+        ],
+        "note": "sort accepted"
+      },
+      "oldest": {
+        "status": 200,
+        "ids": [
+          7527,
+          8443,
+          12873
+        ],
+        "note": "sort accepted"
+      },
+      "bestmatch": {
+        "status": 200,
+        "ids": [
+          3820297,
+          3460877,
+          3367270
+        ],
+        "note": "sort accepted"
+      }
+    },
+    "rate_limit": {
+      "limit": 30,
+      "remaining_last_seen": 15,
+      "calls_made": 21,
+      "delay_used_ms": 2200,
+      "headers_observed": [
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset",
+        "Retry-After"
+      ]
+    },
+    "structure": {
+      "serializer_flavour": "legacy flat serializer (creators[i].name / creators[i].affiliation)",
+      "top_level_keys": [
+        "conceptdoi",
+        "conceptrecid",
+        "created",
+        "doi",
+        "doi_url",
+        "files",
+        "id",
+        "links",
+        "metadata",
+        "modified",
+        "owners",
+        "recid",
+        "revision",
+        "state",
+        "stats",
+        "status",
+        "submitted",
+        "swh",
+        "title",
+        "updated"
+      ],
+      "metadata_keys": [
+        "access_right",
+        "communities",
+        "contributors",
+        "creators",
+        "custom",
+        "description",
+        "doi",
+        "language",
+        "license",
+        "publication_date",
+        "relations",
+        "resource_type",
+        "title",
+        "version"
+      ],
+      "links_keys": [
+        "access",
+        "access_grants",
+        "access_links",
+        "access_request",
+        "access_users",
+        "communities",
+        "communities-suggestions",
+        "doi",
+        "draft",
+        "file_modification",
+        "files",
+        "latest",
+        "latest_html",
+        "media_files",
+        "parent",
+        "parent_doi",
+        "parent_doi_html",
+        "parent_html",
+        "preview_html",
+        "quota_increase",
+        "request_deletion",
+        "requests",
+        "reserve_doi",
+        "self",
+        "self_doi",
+        "self_doi_html",
+        "self_html",
+        "self_iiif_manifest",
+        "self_iiif_sequence",
+        "versions"
+      ],
+      "first_creator_raw": {
+        "name": "Habert, Guillaume",
+        "affiliation": "ETH Zürich",
+        "orcid": "0000-0003-3533-7896"
+      },
+      "pids": null,
+      "files": {
+        "shape": "list",
+        "enabled": null,
+        "count": 1,
+        "first_entry_keys": [
+          "checksum",
+          "id",
+          "key",
+          "links",
+          "size"
+        ],
+        "first_entry": {
+          "id": "1ed99036-4676-496a-ada2-2affafb65141",
+          "key": "arema_snapshot_2026-10-08_10-10-55_no_authors.zip",
+          "size": 330156115,
+          "checksum": "md5:081b33a83d8709181e6f0767cb0d1354",
+          "links": {
+            "self": "https://zenodo.org/api/records/20840785/files/arema_snapshot_2026-10-08_10-10-55_no_authors.zip/content"
+          }
+        }
+      }
+    },
+    "sample_record": {
+      "probe": "Z-05",
+      "query_url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+created%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+      "id": 20840785,
+      "created": "2026-11-05T15:09:57.965664+00:00",
+      "doi": "10.5281/zenodo.20840785",
+      "raw": {
+        "created": "2026-11-05T15:09:57.965664+00:00",
+        "modified": "2026-11-05T15:09:58.267191+00:00",
+        "id": 20840785,
+        "conceptrecid": "20840784",
+        "doi": "10.5281/zenodo.20840785",
+        "conceptdoi": "10.5281/zenodo.20840784",
+        "doi_url": "https://doi.org/10.5281/zenodo.20840785",
+        "metadata": {
+          "title": "Atlas of Regenerative Materials",
+          "doi": "10.5281/zenodo.20840785",
+          "publication_date": "2026-06-25",
+          "description": "<h2>The Atlas of Regenerative Materials</h2>\n<p>The Atlas of Regenerative Materials is collecting knowledge and know-how on availability and use of regenerative materials for construction. Data is structured in 5 entities: Resource, Buidling Material, Construction Technique, Professionals and Buildings. Taxonomies for ...",
+          "access_right": "open",
+          "creators": [
+            {
+              "name": "Habert, Guillaume",
+              "affiliation": "ETH Zürich",
+              "orcid": "0000-0003-3533-7896"
+            },
+            {
+              "name": "Huber, Shoshana",
+              "affiliation": "ETH Zürich",
+              "orcid": "0009-0003-1354-5026"
+            },
+            {
+              "name": "Bengana, Alia",
+              "affiliation": "School of Engineering and  Architecture of Fribourg",
+              "orcid": "0009-0004-4647-7178"
+            },
+            {
+              "name": "Marcon, Yannick",
+              "affiliation": "École Polytechnique Fédérale de Lausanne",
+              "orcid": "0000-0003-0138-2023"
+            }
+          ],
+          "contributors": [
+            {
+              "name": "Bocco, Andrea",
+              "affiliation": "Politecnico di Torino",
+              "type": "DataCurator",
+              "orcid": "0000-0001-5639-5660"
+            },
+            {
+              "name": "Fanelsa, Niklas",
+              "affiliation": "Technical University of Munich",
+              "type": "DataCurator",
+              "orcid": "0009-0007-6216-4843"
+            },
+            {
+              "name": "Calabria-Holley, Juliana",
+              "affiliation": "University of Bath",
+              "type": "DataCurator",
+              "orcid": "0000-0002-0764-9473"
+            },
+            {
+              "name": "Natarajan, Sukumar",
+              "affiliation": "University of Bath",
+              "type": "DataCurator",
+              "orcid": "0000-0001-5831-1678"
+            }
+          ],
+          "version": "1.0.0",
+          "language": "eng",
+          "custom": {
+            "code:codeRepository": "https://github.com/EPFL-ENAC/ALICE-ETHZ-AREMA",
+            "code:programmingLanguage": [
+              {
+                "id": "python",
+                "title": {
+                  "en": "Python"
+                }
+              },
+              {
+                "id": "vue",
+                "title": {
+                  "en": "Vue"
+                }
+              }
+            ],
+            "code:developmentStatus": {
+              "id": "active",
+              "title": {
+                "en": "Active"
+              }
+            }
+          },
+          "resource_type": {
+            "title": "Dataset",
+            "type": "dataset"
+          },
+          "license": {
+            "id": "cc-by-sa-4.0"
+          },
+          "communities": [
+            {
+              "id": "epfl"
+            }
+          ],
+          "relations": {
+            "version": [
+              {
+                "index": 0,
+                "is_last": true,
+                "parent": {
+                  "pid_type": "recid",
+                  "pid_value": "20840784"
+                }
+              }
+            ]
+          }
+        },
+        "title": "Atlas of Regenerative Materials",
+        "links": {
+          "self": "https://zenodo.org/api/records/20840785",
+          "self_html": "https://zenodo.org/records/20840785",
+          "preview_html": "https://zenodo.org/records/20840785?preview=1",
+          "doi": "https://doi.org/10.5281/zenodo.20840785",
+          "self_doi": "https://doi.org/10.5281/zenodo.20840785",
+          "self_doi_html": "https://zenodo.org/doi/10.5281/zenodo.20840785",
+          "reserve_doi": "https://zenodo.org/api/records/20840785/draft/pids/doi",
+          "parent": "https://zenodo.org/api/records/20840784",
+          "parent_html": "https://zenodo.org/records/20840784",
+          "parent_doi": "https://doi.org/10.5281/zenodo.20840784",
+          "parent_doi_html": "https://zenodo.org/doi/10.5281/zenodo.20840784",
+          "self_iiif_manifest": "https://zenodo.org/api/iiif/record:20840785/manifest",
+          "self_iiif_sequence": "https://zenodo.org/api/iiif/record:20840785/sequence/default",
+          "files": "https://zenodo.org/api/records/20840785/files",
+          "media_files": "https://zenodo.org/api/records/20840785/media-files",
+          "latest": "https://zenodo.org/api/records/20840785/versions/latest",
+          "latest_html": "https://zenodo.org/records/20840785/latest",
+          "versions": "https://zenodo.org/api/records/20840785/versions",
+          "draft": "https://zenodo.org/api/records/20840785/draft",
+          "access_links": "https://zenodo.org/api/records/20840785/access/links",
+          "access_grants": "https://zenodo.org/api/records/20840785/access/grants",
+          "access_users": "https://zenodo.org/api/records/20840785/access/users",
+          "access_request": "https://zenodo.org/api/records/20840785/access/request",
+          "access": "https://zenodo.org/api/records/20840785/access",
+          "communities": "https://zenodo.org/api/records/20840785/communities",
+          "communities-suggestions": "https://zenodo.org/api/records/20840785/communities-suggestions",
+          "request_deletion": "https://zenodo.org/api/records/20840785/request-deletion",
+          "file_modification": "https://zenodo.org/api/records/20840785/file-modification",
+          "quota_increase": "https://zenodo.org/api/records/20840785/quota-increase",
+          "requests": "https://zenodo.org/api/records/20840785/requests"
+        },
+        "updated": "2026-11-05T15:09:58.267191+00:00",
+        "recid": "20840785",
+        "revision": 4,
+        "files": [
+          {
+            "id": "1ed99036-4676-496a-ada2-2affafb65141",
+            "key": "arema_snapshot_2026-10-08_10-10-55_no_authors.zip",
+            "size": 330156115,
+            "checksum": "md5:081b33a83d8709181e6f0767cb0d1354",
+            "links": {
+              "self": "https://zenodo.org/api/records/20840785/files/arema_snapshot_2026-10-08_10-10-55_no_authors.zip/content"
+            }
+          }
+        ],
+        "swh": null,
+        "owners": [
+          {
+            "id": "1693361"
+          }
+        ],
+        "status": "published",
+        "stats": {
+          "downloads": 5,
+          "unique_downloads": 4,
+          "views": 26,
+          "unique_views": 22,
+          "version_downloads": 5,
+          "version_unique_downloads": 4,
+          "version_unique_views": 22,
+          "version_views": 26
+        },
+        "state": "done",
+        "submitted": true
+      }
+    },
+    "field_paths": {
+      "title": {
+        "primary": {
+          "path": "metadata.title",
+          "present": true,
+          "example": "Atlas of Regenerative Materials",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "metadata.title",
+            "present": true,
+            "example": "Atlas of Regenerative Materials",
+            "example_shape": {
+              "type": "str"
+            }
+          }
+        ]
+      },
+      "authors": {
+        "primary": {
+          "path": "metadata.creators[0].name",
+          "present": true,
+          "example": "Habert, Guillaume",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "metadata.creators[0].name",
+            "present": true,
+            "example": "Habert, Guillaume",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "metadata.creators[0].person_or_org.name",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          },
+          {
+            "path": "metadata.creators[0].person_or_org.family_name",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          }
+        ]
+      },
+      "authors_all": {
+        "primary": {
+          "path": "metadata.creators",
+          "present": true,
+          "example": "[{'name': 'Habert, Guillaume', 'affiliation': 'ETH Zürich', 'orcid': '0000-0003-3533-7896'}, {'name': 'Huber, ...",
+          "example_shape": {
+            "type": "list",
+            "count": 4,
+            "first": "Habert, Guillaume"
+          }
+        },
+        "tested": [
+          {
+            "path": "metadata.creators",
+            "present": true,
+            "example": "[{'name': 'Habert, Guillaume', 'affiliation': 'ETH Zürich', 'orcid': '0000-0003-3533-7896'}, {'name': 'Huber, ...",
+            "example_shape": {
+              "type": "list",
+              "count": 4,
+              "first": "Habert, Guillaume"
+            }
+          }
+        ]
+      },
+      "affiliation_unit": {
+        "primary": {
+          "path": "metadata.creators[0].affiliation",
+          "present": true,
+          "example": "ETH Zürich",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "metadata.creators[0].affiliation",
+            "present": true,
+            "example": "ETH Zürich",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "metadata.creators[0].affiliations[0].name",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          }
+        ]
+      },
+      "publication_date": {
+        "primary": {
+          "path": "metadata.publication_date",
+          "present": true,
+          "example": "2026-06-25",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "metadata.publication_date",
+            "present": true,
+            "example": "2026-06-25",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "created",
+            "present": true,
+            "example": "2026-11-05T15:09:57.965664+00:00",
+            "example_shape": {
+              "type": "str"
+            }
+          }
+        ]
+      },
+      "doi": {
+        "primary": {
+          "path": "doi",
+          "present": true,
+          "example": "10.5281/zenodo.20840785",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "doi",
+            "present": true,
+            "example": "10.5281/zenodo.20840785",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "metadata.doi",
+            "present": true,
+            "example": "10.5281/zenodo.20840785",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "doi_url",
+            "present": true,
+            "example": "https://doi.org/10.5281/zenodo.20840785",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "conceptdoi",
+            "present": true,
+            "example": "10.5281/zenodo.20840784",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "pids.doi.identifier",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          }
+        ]
+      },
+      "record_url": {
+        "primary": {
+          "path": "links.self_html",
+          "present": true,
+          "example": "https://zenodo.org/records/20840785",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "links.self_html",
+            "present": true,
+            "example": "https://zenodo.org/records/20840785",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "links.html",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          },
+          {
+            "path": "links.self",
+            "present": true,
+            "example": "https://zenodo.org/api/records/20840785",
+            "example_shape": {
+              "type": "str"
+            }
+          }
+        ]
+      },
+      "resource_type": {
+        "primary": {
+          "path": "metadata.resource_type.type",
+          "present": true,
+          "example": "dataset",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "metadata.resource_type.type",
+            "present": true,
+            "example": "dataset",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "metadata.resource_type.id",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          }
+        ]
+      },
+      "files": {
+        "primary": {
+          "path": "files[0].key",
+          "present": true,
+          "example": "arema_snapshot_2026-10-08_10-10-55_no_authors.zip",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "files[0].key",
+            "present": true,
+            "example": "arema_snapshot_2026-10-08_10-10-55_no_authors.zip",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "files[0].size",
+            "present": true,
+            "example": "330156115",
+            "example_shape": {
+              "type": "int"
+            }
+          },
+          {
+            "path": "files[0].checksum",
+            "present": true,
+            "example": "md5:081b33a83d8709181e6f0767cb0d1354",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "files[0].links.self",
+            "present": true,
+            "example": "https://zenodo.org/api/records/20840785/files/arema_snapshot_2026-10-08_10-10-55_no_authors.zip/content",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "files.entries[0].key",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          },
+          {
+            "path": "files.entries[0].links.content",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          }
+        ]
+      },
+      "record_url_derived": {
+        "template": "https://zenodo.org/records/{id}",
+        "example": "https://zenodo.org/records/20840785"
+      }
+    },
+    "transport": {
+      "calls": 21,
+      "requests": 21,
+      "curl_fallback": 0,
+      "waf_challenges_seen": 0
+    }
+  },
+  "infoscience": {
+    "endpoint": "https://infoscience.epfl.ch/server/api/discover/search/objects",
+    "api_family": "DSpace 7 CRIS REST (Infoscience)",
+    "probed_utc": "2026-11-09T16:17:01+00:00",
+    "verdict": "PASS - live JSON retrieved; all 16 calls were accepted through plain Python requests (no WAF challenge in this run)",
+    "transport": {
+      "calls": 16,
+      "requests": 16,
+      "curl_fallback": 0,
+      "waf_challenges_seen": 0
+    },
+    "transport_policy": "Python requests is answered with an AWS WAF bot challenge (HTTP 405/202 + x-amzn-waf-action); curl.exe is used as fallback.",
+    "date_window": {
+      "key": "last_365d",
+      "label": "rolling last 365 days",
+      "from": "2025-11-09",
+      "to": "2026-11-09"
+    },
+    "query_urls": {
+      "recommended_dataset_window": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.issued%3A%5B2025-11-09+TO+2026-11-09%5D&size=5&page=0&sort=dc.date.issued%2Cdesc",
+      "by_issued_date": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.issued%3A%5B2025-11-09+TO+2026-11-09%5D&size=5&page=0&sort=dc.date.issued%2Cdesc",
+      "by_accessioned_date": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.accessioned%3A%5B2025-11-09+TO+2026-11-09%5D&size=3&page=0&sort=dc.date.accessioned%2Cdesc",
+      "datasets_all_time": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&sort=dc.date.accessioned%2Cdesc&page=0&query=dc.type%3Adataset&size=25",
+      "software_all_time": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&sort=dc.date.accessioned%2Cdesc&page=0&query=dc.type%3Asoftware&size=1"
+    },
+    "totals": {
+      "datasets_all_time": 396,
+      "software_all_time": 25,
+      "all_researchoutputs": 197730,
+      "datasets_in_window_by_issued": 47,
+      "datasets_in_window_by_accessioned": 73
+    },
+    "date_syntax": {
+      "issued_range": {
+        "query": "",
+        "status": 200,
+        "total_hits": 47,
+        "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.issued%3A%5B2025-11-09+TO+2026-11-09%5D&size=5&page=0&sort=dc.date.issued%2Cdesc"
+      },
+      "accessioned_range": {
+        "status": 200,
+        "total_hits": 73,
+        "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.accessioned%3A%5B2025-11-09+TO+2026-11-09%5D&size=3&page=0&sort=dc.date.accessioned%2Cdesc"
+      }
+    },
+    "type_syntax": {
+      "dataset": {
+        "query": "dc.type:dataset",
+        "status": 200,
+        "total_hits": 396,
+        "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&sort=dc.date.accessioned%2Cdesc&page=0&query=dc.type%3Adataset&size=25"
+      },
+      "software": {
+        "query": "dc.type:software",
+        "status": 200,
+        "total_hits": 25,
+        "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&sort=dc.date.accessioned%2Cdesc&page=0&query=dc.type%3Asoftware&size=1"
+      },
+      "all_researchoutputs": {
+        "query": "*",
+        "status": 200,
+        "total_hits": 197730,
+        "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=%2A&size=1&page=0"
+      }
+    },
+    "facet_syntax": {
+      "resourceType": {
+        "param": "f.resourceType=dataset,equals",
+        "status": 400,
+        "total_hits": null,
+        "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&f.resourceType=dataset%2Cequals&size=1&page=0",
+        "note": "HTTP 400 - rejected",
+        "error_body": "{\"timestamp\":\"2026-11-09T16:20:07.233+00:00\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"An exception has occurred\",\"path\":\"/server/api/discover/search/objects\"}"
+      },
+      "itemtype": {
+        "param": "f.itemtype=dataset,equals",
+        "status": 400,
+        "total_hits": null,
+        "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&f.itemtype=dataset%2Cequals&size=1&page=0",
+        "note": "HTTP 400 - rejected",
+        "error_body": "{\"timestamp\":\"2026-11-09T16:20:19.345+00:00\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"An exception has occurred\",\"path\":\"/server/api/discover/search/objects\"}"
+      }
+    },
+    "page_size": {
+      "matrix": [
+        {
+          "requested_size": 100,
+          "status": 200,
+          "returned": 100,
+          "page_object": {
+            "number": 0,
+            "size": 100,
+            "totalPages": 4,
+            "totalElements": 396
+          },
+          "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset&size=100&page=0",
+          "note": "page size cap probe"
+        },
+        {
+          "requested_size": 200,
+          "status": 200,
+          "returned": 100,
+          "page_object": {
+            "number": 0,
+            "size": 200,
+            "totalPages": 2,
+            "totalElements": 396
+          },
+          "url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset&size=200&page=0",
+          "note": "page size cap probe"
+        }
+      ],
+      "max_effective_page_size": 100,
+      "notes": "DSpace 7 clamps or rejects size above dspace.search.maxPageSize (upstream default 100)."
+    },
+    "pagination": {
+      "probes": {
+        "0": {
+          "status": 200,
+          "handles": [
+            "20.500.14299/269054",
+            "20.500.14299/268377"
+          ],
+          "page_object": {
+            "number": 0,
+            "size": 2,
+            "totalPages": 198,
+            "totalElements": 396
+          }
+        },
+        "1": {
+          "status": 200,
+          "handles": [
+            "20.500.14299/268122",
+            "20.500.14299/267349"
+          ],
+          "page_object": {
+            "number": 1,
+            "size": 2,
+            "totalPages": 198,
+            "totalElements": 396
+          }
+        }
+      },
+      "index_base": "0-indexed (page=0 is the first page)"
+    },
+    "pagination_gap_test": {
+      "size200_page1_first_handle": "20.500.14299/206126",
+      "size100_page2_first_handle": "20.500.14299/206126",
+      "size200_page1_page_object": {
+        "number": 1,
+        "size": 200,
+        "totalPages": 2,
+        "totalElements": 300
+      },
+      "size100_page2_page_object": {
+        "number": 2,
+        "size": 100,
+        "totalPages": 4,
+        "totalElements": 396
+      },
+      "gap_detected": true,
+      "note": "size>100 is clamped to 100 objects per response, but the offset is still computed as page*size - so 100 records are silently skipped on every page transition. Never request size>100."
+    },
+    "field_audit": {
+      "dc.title": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "Atlas of Regenerative Materials",
+          "DCSM Documentation",
+          "ArmEpiC – Armenian Epigraphic Corpus (ArtsakhEpiC Sub-Corpus)."
+        ]
+      },
+      "dc.contributor.author": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "Habert, Guillaume",
+          "Huber, Shoshana",
+          "Bengana, Alia"
+        ]
+      },
+      "dc.contributor.department": {
+        "present_in": 0,
+        "of_objects": 25,
+        "presence_pct": 0.0,
+        "examples": []
+      },
+      "epfl.unit": {
+        "present_in": 0,
+        "of_objects": 25,
+        "presence_pct": 0.0,
+        "examples": []
+      },
+      "epfl.laboratory": {
+        "present_in": 0,
+        "of_objects": 25,
+        "presence_pct": 0.0,
+        "examples": []
+      },
+      "epfl.department": {
+        "present_in": 0,
+        "of_objects": 25,
+        "presence_pct": 0.0,
+        "examples": []
+      },
+      "cris.virtual.department": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "ENAC-IT",
+          "LSMS",
+          "#PLACEHOLDER_PARENT_METADATA_VALUE#"
+        ]
+      },
+      "cris.virtualsource.department": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "4df335e1-aac1-4797-912c-817b55177c7a",
+          "b2bde37b-b5b3-4e0c-b167-9adc6a9622ec",
+          "c82fa577-db9f-4ed3-8084-cd6b6af2d027"
+        ]
+      },
+      "cris.virtual.unitId": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "10241",
+          "10232",
+          "12632"
+        ]
+      },
+      "cris.virtualsource.unitId": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "4997bbce-76d4-4f27-be42-926d32669650",
+          "eaa245bc-3fce-4c2b-8d67-2e0c6ee10031",
+          "1bb732d2-397c-436a-a982-26d43348ce79"
+        ]
+      },
+      "oairecerif.author.affiliation": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "ETH Zürich",
+          "School of Engineering and  Architecture of Fribourg",
+          "École Polytechnique Fédérale de Lausanne"
+        ]
+      },
+      "dc.date.issued": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "2026",
+          "2026-08-05",
+          "2026-03-20"
+        ]
+      },
+      "dc.date.accessioned": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "2026-11-06T06:30:59Z",
+          "2026-10-21T06:15:58Z",
+          "2026-10-14T06:54:17Z"
+        ]
+      },
+      "dc.date.available": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "2026-11-06T06:30:59Z",
+          "2026-10-21T06:15:58Z",
+          "2026-10-14T06:54:17Z"
+        ]
+      },
+      "dc.date.created": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "2026-11-05",
+          "2026-10-20",
+          "2026-10-14"
+        ]
+      },
+      "dc.identifier.doi": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "10.5281/zenodo.20840785",
+          "10.5281/zenodo.23209677",
+          "10.5281/zenodo.23208654"
+        ]
+      },
+      "dc.identifier.uri": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "https://infoscience.epfl.ch/handle/20.500.14299/269054",
+          "https://infoscience.epfl.ch/handle/20.500.14299/268377",
+          "https://infoscience.epfl.ch/handle/20.500.14299/268122"
+        ]
+      },
+      "dc.type": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "dataset",
+          "dataset::simulation data",
+          "dataset::measurement and test data"
+        ]
+      },
+      "dc.publisher": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "Zenodo",
+          "European Organization for Nuclear Research"
+        ]
+      },
+      "dc.description.abstract": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "The Atlas of Regenerative Materials\n\nThe Atlas of Regenerative Materials is collecting kno...",
+          "Documentation for the DCSM project (Dissemination of Computational\nSolid Mechanics). It in...",
+          "ArmEpiC: Methodology and Data Description \n\nArmEpiC, Armenian Epigraphic Corpus (ArtsakhEp..."
+        ]
+      },
+      "dc.subject": {
+        "present_in": 6,
+        "of_objects": 25,
+        "presence_pct": 24.0,
+        "examples": [
+          "Armenian epigraphy",
+          "Armenian inscriptions",
+          "Epigraphy"
+        ]
+      },
+      "dc.language.iso": {
+        "present_in": 20,
+        "of_objects": 25,
+        "presence_pct": 80.0,
+        "examples": [
+          "en",
+          "xcl"
+        ]
+      },
+      "dspace.entity.type": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "Product"
+        ]
+      },
+      "epfl.author.orcid": {
+        "present_in": 25,
+        "of_objects": 25,
+        "presence_pct": 100.0,
+        "examples": [
+          "0000-0003-3533-7896",
+          "0009-0003-1354-5026",
+          "0009-0004-4647-7178"
+        ]
+      },
+      "epfl.author.role": {
+        "present_in": 18,
+        "of_objects": 25,
+        "presence_pct": 72.0,
+        "examples": [
+          "#PLACEHOLDER_PARENT_METADATA_VALUE#",
+          "data collector",
+          "researcher"
+        ]
+      },
+      "dc.relation.funding": {
+        "present_in": 16,
+        "of_objects": 25,
+        "presence_pct": 64.0,
+        "examples": [
+          "ORD Explore Grant",
+          "Open Research Data (ORD) Explore grant",
+          "Open Educational Resources (OER) grant"
+        ]
+      }
+    },
+    "structure": {
+      "object_keys": [
+        "_embedded",
+        "_links",
+        "hitHighlights",
+        "type",
+        "uniqueType"
+      ],
+      "indexable_object_keys": [
+        "_links",
+        "discoverable",
+        "entityType",
+        "handle",
+        "id",
+        "inArchive",
+        "lastModified",
+        "metadata",
+        "name",
+        "type",
+        "uniqueType",
+        "uuid",
+        "withdrawn"
+      ],
+      "metadata_keys": [
+        "cris.virtual.author-scopus",
+        "cris.virtual.department",
+        "cris.virtual.orcid",
+        "cris.virtual.parent-organization",
+        "cris.virtual.rid",
+        "cris.virtual.sciperId",
+        "cris.virtual.unitId",
+        "cris.virtual.unitManager",
+        "cris.virtualsource.author-scopus",
+        "cris.virtualsource.department",
+        "cris.virtualsource.orcid",
+        "cris.virtualsource.parent-organization",
+        "cris.virtualsource.rid",
+        "cris.virtualsource.sciperId",
+        "cris.virtualsource.unitId",
+        "cris.virtualsource.unitManager",
+        "ctb.oaireXXlicenseCondition",
+        "datacite.relatedIdentifier",
+        "datacite.relationType",
+        "datacite.rights",
+        "dc.contributor",
+        "dc.contributor.author",
+        "dc.date.accessioned",
+        "dc.date.available",
+        "dc.date.created",
+        "dc.date.issued",
+        "dc.date.modified",
+        "dc.description.abstract",
+        "dc.description.sponsorship",
+        "dc.description.version",
+        "dc.identifier.doi",
+        "dc.identifier.uri",
+        "dc.language.iso",
+        "dc.publisher",
+        "dc.relation.funding",
+        "dc.relation.grantno",
+        "dc.relation.title",
+        "dc.title",
+        "dc.type",
+        "dspace.entity.type",
+        "epfl.author.orcid",
+        "epfl.citation.apa",
+        "epfl.citation.chicago",
+        "epfl.citation.cslitem",
+        "epfl.citation.date",
+        "epfl.citation.harvard",
+        "epfl.citation.ieee",
+        "epfl.citation.iso690",
+        "epfl.citation.mla",
+        "epfl.citation.vancouver",
+        "epfl.contributor.orcid",
+        "epfl.contributor.role",
+        "epfl.url",
+        "epfl.url.description",
+        "epfl.workflow.startDateTime",
+        "epfl.writtenAt",
+        "oairecerif.author.affiliation",
+        "oairecerif.contributor.affiliation",
+        "oairecerif.funder"
+      ],
+      "sample_title_entry": null,
+      "sample_author_entry": null,
+      "sample_doi_entry": null,
+      "sample_issued_entry": null,
+      "sample_accessioned_entry": null,
+      "first_object_links": {
+        "accessStatus": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879/accessStatus"
+        },
+        "bundles": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879/bundles"
+        },
+        "identifiers": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879/identifiers"
+        },
+        "mappedCollections": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879/mappedCollections"
+        },
+        "owningCollection": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879/owningCollection"
+        },
+        "relationships": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879/relationships"
+        },
+        "version": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879/version"
+        },
+        "templateItemOf": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879/templateItemOf"
+        },
+        "metrics": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879/metrics"
+        },
+        "thumbnail": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879/thumbnail"
+        },
+        "submitter": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879/submitter"
+        },
+        "self": {
+          "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879"
+        }
+      }
+    },
+    "sample_record": {
+      "probe": "I-10",
+      "query_url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.issued%3A%5B2025-11-09+TO+2026-11-09%5D&size=25&page=0&sort=dc.date.accessioned%2Cdesc",
+      "handle": "20.500.14299/269054",
+      "uuid": "a21bc5df-4b44-434e-a81a-36eb4548d879",
+      "raw": {
+        "hitHighlights": null,
+        "type": "discover",
+        "uniqueType": "discover.discover",
+        "_links": {
+          "indexableObject": {
+            "href": "https://infoscience.epfl.ch/server/api/core/items/a21bc5df-4b44-434e-a81a-36eb4548d879"
+          }
+        },
+        "_embedded": {
+          "indexableObject": {
+            "id": "a21bc5df-4b44-434e-a81a-36eb4548d879",
+            "uuid": "a21bc5df-4b44-434e-a81a-36eb4548d879",
+            "name": "Atlas of Regenerative Materials",
+            "handle": "20.500.14299/269054",
+            "metadata": {
+              "cris.virtual.author-scopus": [
+                {
+                  "value": "#PLACEHOLDER_PARENT_METADATA_VALUE#",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "cris.virtual.department": [
+                {
+                  "value": "ENAC-IT",
+                  "language": null,
+                  "authority": "4602c074-dbba-4f2e-a40d-1c64abf027f2",
+                  "confidence": 600,
+                  "place": 0
+                }
+              ],
+              "cris.virtual.orcid": [
+                {
+                  "value": "#PLACEHOLDER_PARENT_METADATA_VALUE#",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "cris.virtual.parent-organization": [
+                {
+                  "value": "IA",
+                  "language": null,
+                  "authority": "f5a2327d-ca6f-4f51-89c1-0d5cfc8242fa",
+                  "confidence": 600,
+                  "place": 0
+                },
+                {
+                  "value": "ENAC",
+                  "language": null,
+                  "authority": "95372c6b-7d45-432e-a84e-660c9fa54e05",
+                  "confidence": 600,
+                  "place": 1
+                },
+                {
+                  "value": "EPFL",
+                  "language": null,
+                  "authority": "41674f42-ba15-4612-9817-2a6f60985c01",
+                  "confidence": 600,
+                  "place": 2
+                },
+                {
+                  "value": "#PLACEHOLDER_PARENT_METADATA_VALUE#",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 3
+                }
+              ],
+              "cris.virtual.rid": [
+                {
+                  "value": "#PLACEHOLDER_PARENT_METADATA_VALUE#",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "cris.virtual.sciperId": [
+                {
+                  "value": "375133",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "cris.virtual.unitId": [
+                {
+                  "value": "10241",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "cris.virtual.unitManager": [
+                {
+                  "value": "Kaufmann, Vincent",
+                  "language": null,
+                  "authority": "04a63bfb-922b-4e43-90b0-946e31cb8ecc",
+                  "confidence": 600,
+                  "place": 0
+                },
+                {
+                  "value": "Desimone, Laurent",
+                  "language": null,
+                  "authority": "244a1e74-4ed1-4ec8-8878-e71def5dec03",
+                  "confidence": 600,
+                  "place": 1
+                }
+              ],
+              "ctb.oaireXXlicenseCondition": [
+                {
+                  "value": "CC BY-SA",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "datacite.relatedIdentifier": [
+                {
+                  "value": "https://doi.org/10.5281/zenodo.20840784",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0,
+                  "securityLevel": 0
+                }
+              ],
+              "datacite.relationType": [
+                {
+                  "value": "IsVersionOf",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0,
+                  "securityLevel": 0
+                }
+              ],
+              "datacite.rights": [
+                {
+                  "value": "metadata-only",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.contributor": [
+                {
+                  "value": "Bocco, Andrea",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                },
+                {
+                  "value": "Fanelsa, Niklas",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 1
+                },
+                {
+                  "value": "Calabria-Holley, Juliana",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 2
+                },
+                {
+                  "value": "Natarajan, Sukumar",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 3
+                }
+              ],
+              "dc.contributor.author": [
+                {
+                  "value": "Habert, Guillaume",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                },
+                {
+                  "value": "Huber, Shoshana",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 1
+                },
+                {
+                  "value": "Bengana, Alia",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 2
+                },
+                {
+                  "value": "Marcon, Yannick",
+                  "language": null,
+                  "authority": "4df335e1-aac1-4797-912c-817b55177c7a",
+                  "confidence": 600,
+                  "place": 3
+                }
+              ],
+              "dc.date.accessioned": [
+                {
+                  "value": "2026-11-06T06:30:59Z",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.date.available": [
+                {
+                  "value": "2026-11-06T06:30:59Z",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.date.created": [
+                {
+                  "value": "2026-11-05",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.date.issued": [
+                {
+                  "value": "2026",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.date.modified": [
+                {
+                  "value": "2026-11-06T12:35:50.645180Z",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.description.abstract": [
+                {
+                  "value": "The Atlas of Regenerative Materials\n\nThe Atlas of Regenerative Materials is collecting knowledge and know-how on availability and use of regenerative materials for construction. Data is structured in 5 entities: Resource...",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.description.sponsorship": [
+                {
+                  "value": "LASUR",
+                  "language": null,
+                  "authority": "4997bbce-76d4-4f27-be42-926d32669650",
+                  "confidence": 600,
+                  "place": 0
+                }
+              ],
+              "dc.description.version": [
+                {
+                  "value": "1.0.0",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.identifier.doi": [
+                {
+                  "value": "10.5281/zenodo.20840785",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.identifier.uri": [
+                {
+                  "value": "https://infoscience.epfl.ch/handle/20.500.14299/269054",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.language.iso": [
+                {
+                  "value": "en",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.publisher": [
+                {
+                  "value": "Zenodo",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.relation.funding": [
+                {
+                  "value": "ORD Explore Grant",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.relation.grantno": [
+                {
+                  "value": "#PLACEHOLDER_PARENT_METADATA_VALUE#",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.relation.title": [
+                {
+                  "value": "Atlas of Regenerative Materials",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0,
+                  "securityLevel": 0
+                }
+              ],
+              "dc.title": [
+                {
+                  "value": "Atlas of Regenerative Materials",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "dc.type": [
+                {
+                  "value": "dataset",
+                  "language": "en",
+                  "authority": "dataset-coar-types:c_ddb1",
+                  "confidence": 600,
+                  "place": 0
+                }
+              ],
+              "dspace.entity.type": [
+                {
+                  "value": "Product",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "epfl.author.orcid": [
+                {
+                  "value": "0000-0003-3533-7896",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                },
+                {
+                  "value": "0009-0003-1354-5026",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 1
+                },
+                {
+                  "value": "0009-0004-4647-7178",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 2
+                },
+                {
+                  "value": "0000-0003-0138-2023",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 3
+                }
+              ],
+              "epfl.contributor.orcid": [
+                {
+                  "value": "0000-0001-5639-5660",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                },
+                {
+                  "value": "0009-0007-6216-4843",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 1
+                },
+                {
+                  "value": "0000-0002-0764-9473",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 2
+                },
+                {
+                  "value": "0000-0001-5831-1678",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 3
+                }
+              ],
+              "epfl.contributor.role": [
+                {
+                  "value": "#PLACEHOLDER_PARENT_METADATA_VALUE#",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                },
+                {
+                  "value": "#PLACEHOLDER_PARENT_METADATA_VALUE#",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 1
+                },
+                {
+                  "value": "#PLACEHOLDER_PARENT_METADATA_VALUE#",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 2
+                },
+                {
+                  "value": "#PLACEHOLDER_PARENT_METADATA_VALUE#",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 3
+                }
+              ],
+              "epfl.url": [
+                {
+                  "value": "https://github.com/EPFL-ENAC/ALICE-ETHZ-AREMA",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0,
+                  "securityLevel": 0
+                }
+              ],
+              "epfl.url.description": [
+                {
+                  "value": "Code Repository URL",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0,
+                  "securityLevel": 0
+                }
+              ],
+              "epfl.workflow.startDateTime": [
+                {
+                  "value": "2026-11-05T21:09:30.596Z",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "epfl.writtenAt": [
+                {
+                  "value": "EPFL",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                }
+              ],
+              "oairecerif.author.affiliation": [
+                {
+                  "value": "ETH Zürich",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                },
+                {
+                  "value": "ETH Zürich",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 1
+                },
+                {
+                  "value": "School of Engineering and  Architecture of Fribourg",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 2
+                },
+                {
+                  "value": "École Polytechnique Fédérale de Lausanne",
+                  "language": null,
+                  "authority": "will be referenced::ROR-ID::https://ror.org/02s376052",
+                  "confidence": -1,
+                  "place": 3
+                }
+              ],
+              "oairecerif.contributor.affiliation": [
+                {
+                  "value": "Politecnico di Torino",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 0
+                },
+                {
+                  "value": "Technical University of Munich",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 1
+                },
+                {
+                  "value": "University of Bath",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 2
+                },
+                {
+                  "value": "University of Bath",
+                  "language": null,
+                  "authority": null,
+                  "confidence": -1,
+                  "place": 3
+                }
+              ],
+              "oairecerif.funder": [
+                {
+                  "value": "ETH Zurich",
+                  "language": null,
+                  "authority": "401c2295-63c4-45f1-af34-af8cab6d50d6",
+                  "confidence": 400,
+                  "place": 0
+                }
+              ]
+            },
+            "inArchive": true,
+            "discoverable": true,
+            "withdrawn": false,
+            "lastModified": "2026-11-06T12:35:50.645+00:00",
+            "entityType": "Product",
+            "type": "item",
+            "uniqueType": "core.item"
+          }
+        },
+        "_recon_snippet_note": {
+          "dropped_fields": [
+            "indexableObject._links",
+            "cris.virtualsource.author-scopus",
+            "cris.virtualsource.department",
+            "cris.virtualsource.orcid",
+            "cris.virtualsource.parent-organization",
+            "cris.virtualsource.rid",
+            "cris.virtualsource.sciperId",
+            "cris.virtualsource.unitId",
+            "cris.virtualsource.unitManager",
+            "epfl.citation.apa",
+            "epfl.citation.chicago",
+            "epfl.citation.cslitem",
+            "epfl.citation.date",
+            "epfl.citation.harvard",
+            "epfl.citation.ieee",
+            "epfl.citation.iso690",
+            "epfl.citation.mla",
+            "epfl.citation.vancouver"
+          ],
+          "value_lists_capped_to": 4,
+          "capped_counts": {},
+          "string_limit": 220
+        }
+      }
+    },
+    "field_paths": {
+      "title": {
+        "primary": {
+          "path": "_embedded.indexableObject.metadata.dc.title[0].value",
+          "present": true,
+          "example": "Atlas of Regenerative Materials",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "_embedded.indexableObject.metadata.dc.title[0].value",
+            "present": true,
+            "example": "Atlas of Regenerative Materials",
+            "example_shape": {
+              "type": "str"
+            }
+          }
+        ]
+      },
+      "authors": {
+        "primary": {
+          "path": "_embedded.indexableObject.metadata.dc.contributor.author[0].value",
+          "present": true,
+          "example": "Habert, Guillaume",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "_embedded.indexableObject.metadata.dc.contributor.author[0].value",
+            "present": true,
+            "example": "Habert, Guillaume",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "_embedded.indexableObject.metadata.dc.creator[0].value",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          }
+        ]
+      },
+      "authors_all": {
+        "primary": {
+          "path": "_embedded.indexableObject.metadata.dc.contributor.author",
+          "present": true,
+          "example": "[{'value': 'Habert, Guillaume', 'language': None, 'authority': None, 'confidence': -1, 'place': 0}, {'value': ...",
+          "example_shape": {
+            "type": "list",
+            "count": 4,
+            "first": "Habert, Guillaume"
+          }
+        },
+        "tested": [
+          {
+            "path": "_embedded.indexableObject.metadata.dc.contributor.author",
+            "present": true,
+            "example": "[{'value': 'Habert, Guillaume', 'language': None, 'authority': None, 'confidence': -1, 'place': 0}, {'value': ...",
+            "example_shape": {
+              "type": "list",
+              "count": 4,
+              "first": "Habert, Guillaume"
+            }
+          }
+        ]
+      },
+      "affiliation_unit": {
+        "primary": {
+          "path": "_embedded.indexableObject.metadata.cris.virtual.department[0].value",
+          "present": true,
+          "example": "ENAC-IT",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "_embedded.indexableObject.metadata.cris.virtual.department[0].value",
+            "present": true,
+            "example": "ENAC-IT",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "_embedded.indexableObject.metadata.cris.virtual.unitId[0].value",
+            "present": true,
+            "example": "10241",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "_embedded.indexableObject.metadata.oairecerif.author.affiliation[0].value",
+            "present": true,
+            "example": "ETH Zürich",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "_embedded.indexableObject.metadata.epfl.unit[0].value",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          },
+          {
+            "path": "_embedded.indexableObject.metadata.epfl.laboratory[0].value",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          },
+          {
+            "path": "_embedded.indexableObject.metadata.dc.contributor.department[0].value",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          },
+          {
+            "path": "_embedded.indexableObject.metadata.epfl.department[0].value",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          }
+        ]
+      },
+      "publication_date": {
+        "primary": {
+          "path": "_embedded.indexableObject.metadata.dc.date.issued[0].value",
+          "present": true,
+          "example": "2026",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "_embedded.indexableObject.metadata.dc.date.issued[0].value",
+            "present": true,
+            "example": "2026",
+            "example_shape": {
+              "type": "str"
+            }
+          }
+        ]
+      },
+      "accession_date": {
+        "primary": {
+          "path": "_embedded.indexableObject.metadata.dc.date.accessioned[0].value",
+          "present": true,
+          "example": "2026-11-06T06:30:59Z",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "_embedded.indexableObject.metadata.dc.date.accessioned[0].value",
+            "present": true,
+            "example": "2026-11-06T06:30:59Z",
+            "example_shape": {
+              "type": "str"
+            }
+          }
+        ]
+      },
+      "doi": {
+        "primary": {
+          "path": "_embedded.indexableObject.metadata.dc.identifier.doi[0].value",
+          "present": true,
+          "example": "10.5281/zenodo.20840785",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "_embedded.indexableObject.metadata.dc.identifier.doi[0].value",
+            "present": true,
+            "example": "10.5281/zenodo.20840785",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "_embedded.indexableObject.metadata.dc.identifier.uri[0].value",
+            "present": true,
+            "example": "https://infoscience.epfl.ch/handle/20.500.14299/269054",
+            "example_shape": {
+              "type": "str"
+            }
+          }
+        ]
+      },
+      "record_url": {
+        "primary": {
+          "path": "_embedded.indexableObject.handle",
+          "present": true,
+          "example": "20.500.14299/269054",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "handle",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          },
+          {
+            "path": "_embedded.indexableObject.handle",
+            "present": true,
+            "example": "20.500.14299/269054",
+            "example_shape": {
+              "type": "str"
+            }
+          },
+          {
+            "path": "_embedded.indexableObject._links.self.href",
+            "present": false,
+            "example": null,
+            "example_shape": {
+              "type": "NoneType"
+            }
+          }
+        ]
+      },
+      "resource_type": {
+        "primary": {
+          "path": "_embedded.indexableObject.metadata.dc.type[0].value",
+          "present": true,
+          "example": "dataset",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "_embedded.indexableObject.metadata.dc.type[0].value",
+            "present": true,
+            "example": "dataset",
+            "example_shape": {
+              "type": "str"
+            }
+          }
+        ]
+      },
+      "uuid": {
+        "primary": {
+          "path": "_embedded.indexableObject.uuid",
+          "present": true,
+          "example": "a21bc5df-4b44-434e-a81a-36eb4548d879",
+          "example_shape": {
+            "type": "str"
+          }
+        },
+        "tested": [
+          {
+            "path": "_embedded.indexableObject.uuid",
+            "present": true,
+            "example": "a21bc5df-4b44-434e-a81a-36eb4548d879",
+            "example_shape": {
+              "type": "str"
+            }
+          }
+        ]
+      },
+      "record_url_derived": {
+        "template": "https://infoscience.epfl.ch/handle/{handle}",
+        "example": "https://infoscience.epfl.ch/handle/20.500.14299/269054"
+      },
+      "_presence_audit": {
+        "dc.title": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "Atlas of Regenerative Materials",
+            "DCSM Documentation",
+            "ArmEpiC – Armenian Epigraphic Corpus (ArtsakhEpiC Sub-Corpus)."
+          ]
+        },
+        "dc.contributor.author": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "Habert, Guillaume",
+            "Huber, Shoshana",
+            "Bengana, Alia"
+          ]
+        },
+        "dc.contributor.department": {
+          "presence_pct": 0.0,
+          "present_in": 0,
+          "of_objects": 25,
+          "examples": []
+        },
+        "epfl.unit": {
+          "presence_pct": 0.0,
+          "present_in": 0,
+          "of_objects": 25,
+          "examples": []
+        },
+        "epfl.laboratory": {
+          "presence_pct": 0.0,
+          "present_in": 0,
+          "of_objects": 25,
+          "examples": []
+        },
+        "epfl.department": {
+          "presence_pct": 0.0,
+          "present_in": 0,
+          "of_objects": 25,
+          "examples": []
+        },
+        "cris.virtual.department": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "ENAC-IT",
+            "LSMS",
+            "#PLACEHOLDER_PARENT_METADATA_VALUE#"
+          ]
+        },
+        "cris.virtualsource.department": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "4df335e1-aac1-4797-912c-817b55177c7a",
+            "b2bde37b-b5b3-4e0c-b167-9adc6a9622ec",
+            "c82fa577-db9f-4ed3-8084-cd6b6af2d027"
+          ]
+        },
+        "cris.virtual.unitId": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "10241",
+            "10232",
+            "12632"
+          ]
+        },
+        "cris.virtualsource.unitId": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "4997bbce-76d4-4f27-be42-926d32669650",
+            "eaa245bc-3fce-4c2b-8d67-2e0c6ee10031",
+            "1bb732d2-397c-436a-a982-26d43348ce79"
+          ]
+        },
+        "oairecerif.author.affiliation": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "ETH Zürich",
+            "School of Engineering and  Architecture of Fribourg",
+            "École Polytechnique Fédérale de Lausanne"
+          ]
+        },
+        "dc.date.issued": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "2026",
+            "2026-08-05",
+            "2026-03-20"
+          ]
+        },
+        "dc.date.accessioned": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "2026-11-06T06:30:59Z",
+            "2026-10-21T06:15:58Z",
+            "2026-10-14T06:54:17Z"
+          ]
+        },
+        "dc.date.available": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "2026-11-06T06:30:59Z",
+            "2026-10-21T06:15:58Z",
+            "2026-10-14T06:54:17Z"
+          ]
+        },
+        "dc.date.created": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "2026-11-05",
+            "2026-10-20",
+            "2026-10-14"
+          ]
+        },
+        "dc.identifier.doi": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "10.5281/zenodo.20840785",
+            "10.5281/zenodo.23209677",
+            "10.5281/zenodo.23208654"
+          ]
+        },
+        "dc.identifier.uri": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "https://infoscience.epfl.ch/handle/20.500.14299/269054",
+            "https://infoscience.epfl.ch/handle/20.500.14299/268377",
+            "https://infoscience.epfl.ch/handle/20.500.14299/268122"
+          ]
+        },
+        "dc.type": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "dataset",
+            "dataset::simulation data",
+            "dataset::measurement and test data"
+          ]
+        },
+        "dc.publisher": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "Zenodo",
+            "European Organization for Nuclear Research"
+          ]
+        },
+        "dc.description.abstract": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "The Atlas of Regenerative Materials\n\nThe Atlas of Regenerative Materials is collecting kno...",
+            "Documentation for the DCSM project (Dissemination of Computational\nSolid Mechanics). It in...",
+            "ArmEpiC: Methodology and Data Description \n\nArmEpiC, Armenian Epigraphic Corpus (ArtsakhEp..."
+          ]
+        },
+        "dc.subject": {
+          "presence_pct": 24.0,
+          "present_in": 6,
+          "of_objects": 25,
+          "examples": [
+            "Armenian epigraphy",
+            "Armenian inscriptions",
+            "Epigraphy"
+          ]
+        },
+        "dc.language.iso": {
+          "presence_pct": 80.0,
+          "present_in": 20,
+          "of_objects": 25,
+          "examples": [
+            "en",
+            "xcl"
+          ]
+        },
+        "dspace.entity.type": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "Product"
+          ]
+        },
+        "epfl.author.orcid": {
+          "presence_pct": 100.0,
+          "present_in": 25,
+          "of_objects": 25,
+          "examples": [
+            "0000-0003-3533-7896",
+            "0009-0003-1354-5026",
+            "0009-0004-4647-7178"
+          ]
+        },
+        "epfl.author.role": {
+          "presence_pct": 72.0,
+          "present_in": 18,
+          "of_objects": 25,
+          "examples": [
+            "#PLACEHOLDER_PARENT_METADATA_VALUE#",
+            "data collector",
+            "researcher"
+          ]
+        },
+        "dc.relation.funding": {
+          "presence_pct": 64.0,
+          "present_in": 16,
+          "of_objects": 25,
+          "examples": [
+            "ORD Explore Grant",
+            "Open Research Data (ORD) Explore grant",
+            "Open Educational Resources (OER) grant"
+          ]
+        }
+      }
+    },
+    "probe_run": {
+      "calls_made": 16,
+      "delay_used_ms": 12000,
+      "aborted": false,
+      "abort_reason": null
+    }
+  },
+  "answers": {
+    "1_zenodo_dataset_query_url": "https://zenodo.org/api/communities/epfl/records?q=resource_type.type%3Adataset+AND+created%3A%5B2026-08-12+TO+2026-11-10%5D&size=5&sort=newest&page=1",
+    "2_infoscience_dataset_query_url": "https://infoscience.epfl.ch/server/api/discover/search/objects?configuration=researchoutputs&query=dc.type%3Adataset+AND+dc.date.issued%3A%5B2025-11-09+TO+2026-11-09%5D&size=5&page=0&sort=dc.date.issued%2Cdesc",
+    "4_field_paths": {
+      "zenodo": {
+        "title": "metadata.title",
+        "authors": "metadata.creators[0].name",
+        "authors_all": "metadata.creators",
+        "affiliation_unit": "metadata.creators[0].affiliation",
+        "publication_date": "metadata.publication_date",
+        "doi": "doi",
+        "record_url": "links.self_html",
+        "resource_type": "metadata.resource_type.type",
+        "files": "files[0].key"
+      },
+      "infoscience": {
+        "title": "_embedded.indexableObject.metadata.dc.title[0].value",
+        "authors": "_embedded.indexableObject.metadata.dc.contributor.author[0].value",
+        "authors_all": "_embedded.indexableObject.metadata.dc.contributor.author",
+        "affiliation_unit": "_embedded.indexableObject.metadata.cris.virtual.department[0].value",
+        "publication_date": "_embedded.indexableObject.metadata.dc.date.issued[0].value",
+        "accession_date": "_embedded.indexableObject.metadata.dc.date.accessioned[0].value",
+        "doi": "_embedded.indexableObject.metadata.dc.identifier.doi[0].value",
+        "record_url": "_embedded.indexableObject.handle",
+        "resource_type": "_embedded.indexableObject.metadata.dc.type[0].value",
+        "uuid": "_embedded.indexableObject.uuid"
+      }
+    },
+    "5_pagination": {
+      "zenodo": {
+        "index_base": "1-indexed - page=0 is rejected with HTTP 400",
+        "max_page_size": 25,
+        "page_param": "page (1-indexed)",
+        "size_param": "size (hard server cap 25; larger values are rejected with HTTP 400)"
+      },
+      "infoscience": {
+        "index_base": "0-indexed (page=0 is the first page)",
+        "max_page_size": 100,
+        "page_param": "page (0-indexed)",
+        "size_param": "size (clamped to 100; larger values are accepted but silently shift the offset)"
+      }
+    }
+  }
+}

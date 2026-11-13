@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ENAC-IT4R Dataset &amp; Repository Harvester</title>
+  <meta name="description" content="EPFL ENAC-IT4R harvester for Infoscience (DSpace 7) and the Zenodo EPFL community.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="top-strip" aria-hidden="true"></div>
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">EPFL</span>
+      <div class="brand-text">
+        <h1>Dataset &amp; Repository Harvester</h1>
+        <p>ENAC-IT4R &middot; Infoscience (DSpace 7) &middot; Zenodo EPFL Community</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="version-pill">v1.5</span>
+      <span class="status-dot" id="status-dot" aria-hidden="true"></span>
+      <span class="status-text" id="status-text">Ready</span>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="sidebar">
+      <section class="panel">
+        <h2 class="panel-title">Harvest window</h2>
+        <div class="preset-grid" id="preset-grid">
+          <button type="button" class="preset" data-preset="7d" data-days="7">7 Days</button>
+          <button type="button" class="preset" data-preset="14d" data-days="14">14 Days</button>
+          <button type="button" class="preset" data-preset="30d" data-days="30">30 Days</button>
+          <button type="button" class="preset" data-preset="90d" data-days="90">90 Days</button>
+          <button type="button" class="preset" data-preset="365d" data-days="365">1 Year</button>
+          <button type="button" class="preset" data-preset="all" data-days="0"
+                  title="As much history as the per-run page caps allow">All Time</button>
+        </div>
+        <div class="field-row">
+          <label class="field">
+            <span>From Date</span>
+            <input type="date" id="date-from">
+          </label>
+          <label class="field">
+            <span>To Date</span>
+            <input type="date" id="date-to">
+          </label>
+        </div>
+        <p class="hint">The window drives the live API query and the local display filter.</p>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Search</h2>
+        <input type="search" id="search-input" class="search-input"
+               placeholder="Title, abstract, author, lab, PI, file type, keyword...">
+        <div class="toggle-list">
+          <label class="toggle">
+            <input type="checkbox" id="toggle-enac">
+            <span>ENAC Units Only</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-code">
+            <span>Has Code Repository</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-funded">
+            <span>Grant Funded (ORD / Flagship)</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-sync">
+            <span>New / Updated Only</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Actions</h2>
+        <button type="button" id="run-harvest" class="btn btn-primary">
+          Run Scraper (Live API)
+        </button>
+        <div class="btn-row">
+          <button type="button" id="export-csv" class="btn btn-ghost">Export CSV</button>
+          <button type="button" id="export-json" class="btn btn-ghost">Export JSON</button>
+        </div>
+        <p class="hint">
+          Anonymous access only: Zenodo 25 records/page, Infoscience 100 records/page.
+        </p>
+      </section>
+
+      <section class="panel metrics">
+        <h2 class="panel-title">Hub Metrics</h2>
+        <div class="metric-grid">
+          <div class="metric">
+            <span class="metric-value" id="metric-records">0</span>
+            <span class="metric-label">Records</span>
+          </div>
+          <div class="metric">
+            <span class="metric-value" id="metric-labs">0</span>
+            <span class="metric-label">Labs / Units</span>
+          </div>
+          <div class="metric">
+            <span class="metric-value" id="metric-new">0</span>
+            <span class="metric-label">New (last run)</span>
+          </div>
+          <div class="metric">
+            <span class="metric-value" id="metric-updated">0</span>
+            <span class="metric-label">Updated (last run)</span>
+          </div>
+        </div>
+        <p class="hint" id="metrics-hint">No harvest yet in this session.</p>
+      </section>
+
+      <section class="panel console-panel">
+        <div class="console-head">
+          <h2 class="panel-title">Scraper Live Console</h2>
+          <button type="button" id="clear-console" class="link-btn">clear</button>
+        </div>
+        <div class="console-log" id="console-log" role="log" aria-live="polite"></div>
+      </section>
+    </aside>
+
+    <section class="results">
+      <div class="panel results-bar">
+        <div class="results-summary">
+          <strong id="result-count">0</strong>
+          <span class="results-unit">records</span>
+          <span class="results-window" id="window-label">Last 7 days</span>
+        </div>
+        <div class="results-meta" id="results-meta">Local cache · no upstream calls on refresh</div>
+      </div>
+
+      <div class="filter-pills" id="filter-pills" role="tablist" aria-label="Resource type filters"></div>
+
+      <div class="dataset-list" id="dataset-list"></div>
+
+      <div class="empty-state panel" id="empty-state" hidden>
+        <h3 id="empty-title">No records yet</h3>
+        <p id="empty-copy">
+          Pick a date window, choose a resource type and press
+          <strong>Run Scraper (Live API)</strong> to harvest EPFL research outputs.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+# ---------------------------------------------------------------------------
+# Local runtime state — disposable, rebuilt by the next harvest
+# ---------------------------------------------------------------------------
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+dataset_cache.json
+
+# ---------------------------------------------------------------------------
+# Python byte-code, caches, packaging
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+.eggs/
+build/
+dist/
+wheels/
+develop-eggs/
+pip-wheel-metadata/
+MANIFEST
+.installed.cfg
+
+# ---------------------------------------------------------------------------
+# Virtual environments
+# ---------------------------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ---------------------------------------------------------------------------
+# Test / type-checker / linter caches
+# ---------------------------------------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# ---------------------------------------------------------------------------
+# Scratch artefacts (root-level throw-away probes and smoke scripts).
+# Anchored with "/" so package files such as backend/__init__.py stay tracked.
+# ---------------------------------------------------------------------------
+/_*.py
+/_*.js
+/_*.html
+*.log
+logs/
+*.tmp
+
+# ---------------------------------------------------------------------------
+# Editors and operating systems
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+
+# ---------------------------------------------------------------------------
+# Secrets / local overrides
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example

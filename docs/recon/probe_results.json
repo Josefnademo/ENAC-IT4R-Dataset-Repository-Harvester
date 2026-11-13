@@ -1,0 +1,166 @@
+{
+  "zenodo": {},
+  "infoscience": {
+    "date_window": [
+      "2025-11-12",
+      "2026-11-12"
+    ],
+    "total_elements": 75,
+    "page_info": {
+      "number": 0,
+      "size": 100,
+      "totalPages": 1,
+      "totalElements": 75
+    },
+    "sampled": 75,
+    "by_dc_type": {
+      "dataset": 61,
+      "dataset::simulation data": 4,
+      "dataset::measurement and test data": 2,
+      "dataset::geospatial data": 2,
+      "dataset::experimental data": 2,
+      "dataset::recorded data": 1,
+      "dataset::données enregistrées": 1,
+      "dataset::données de simulation": 1,
+      "dataset::données expérimentales": 1
+    },
+    "field_presence": {
+      "cris.virtual.author-scopus": 75,
+      "cris.virtual.department": 75,
+      "cris.virtual.orcid": 75,
+      "cris.virtual.parent-organization": 75,
+      "cris.virtual.rid": 75,
+      "cris.virtual.sciperId": 75,
+      "cris.virtual.unitId": 75,
+      "cris.virtual.unitManager": 75,
+      "cris.virtualsource.author-scopus": 75,
+      "cris.virtualsource.department": 75,
+      "cris.virtualsource.orcid": 75,
+      "cris.virtualsource.parent-organization": 75,
+      "cris.virtualsource.rid": 75,
+      "cris.virtualsource.sciperId": 75,
+      "cris.virtualsource.unitId": 75,
+      "cris.virtualsource.unitManager": 75,
+      "ctb.oaireXXlicenseCondition": 75,
+      "datacite.rights": 75,
+      "dc.contributor.author": 75,
+      "dc.date.accessioned": 75,
+      "dc.date.available": 75,
+      "dc.date.created": 75,
+      "dc.date.issued": 75,
+      "dc.date.modified": 75,
+      "dc.description.abstract": 75,
+      "dc.description.sponsorship": 75,
+      "dc.identifier.uri": 75,
+      "dc.title": 75,
+      "dc.type": 75,
+      "dspace.entity.type": 75,
+      "epfl.citation.apa": 75,
+      "epfl.citation.chicago": 75,
+      "epfl.citation.cslitem": 75,
+      "epfl.citation.date": 75,
+      "epfl.citation.harvard": 75,
+      "epfl.citation.ieee": 75,
+      "epfl.citation.iso690": 75,
+      "epfl.citation.mla": 75,
+      "epfl.citation.vancouver": 75,
+      "epfl.workflow.startDateTime": 75,
+      "epfl.writtenAt": 75,
+      "oairecerif.author.affiliation": 75,
+      "epfl.author.orcid": 74,
+      "dc.publisher": 72,
+      "datacite.relatedIdentifier": 71,
+      "datacite.relationType": 71,
+      "dc.identifier.doi": 71,
+      "dc.relation.title": 71,
+      "dc.language.iso": 64,
+      "epfl.author.role": 58,
+      "dc.description.version": 40,
+      "dc.relation.funding": 38,
+      "dc.relation.grantno": 38,
+      "oairecerif.funder": 38,
+      "dc.identifier.acoua": 33,
+      "dc.subject": 29,
+      "epfl.contributor.role": 26,
+      "crisfund.award.uri": 23,
+      "dc.contributor": 16,
+      "epfl.contributor.orcid": 16,
+      "epfl.url": 16,
+      "epfl.url.description": 16,
+      "oairecerif.contributor.affiliation": 16,
+      "datacite.geoLocation": 6,
+      "dc.relation.ispartof": 6,
+      "dc.relation.journal": 6,
+      "oaire.licenseCondition": 6,
+      "dspace.file.type": 5,
+      "dc.description.notes": 2,
+      "dc.relation.conference": 2,
+      "epfl.relation.conferenceType": 2,
+      "oaire.citation.conferenceDate": 2,
+      "oaire.citation.conferencePlace": 2,
+      "oairecerif.acronym": 2,
+      "dc.relation.issn": 2,
+      "oaire.citation.issue": 2,
+      "oaire.citation.volume": 2,
+      "dc.identifier": 1,
+      "datacite.dateType.Created": 1,
+      "dspace.iiif.enabled": 1
+    },
+    "samples": {
+      "dataset": {
+        "title": "Data for: Nonzero-temperature vibronic spectra of polyatomic molecules from a zero-temperature classical trajectory",
+        "type": [
+          "dataset"
+        ]
+      },
+      "dataset::simulation data": {
+        "title": "Data for \"Periodic Phase Slips and Frequency Comb Generation at Tunable Microwave Frequencies in Superconducting Diabolo Structures\"",
+        "type": [
+          "dataset::simulation data"
+        ]
+      },
+      "dataset::measurement and test data": {
+        "title": "Supporting data: Soft-X-ray momentum microscopy of nonlinear magnon interactions",
+        "type": [
+          "dataset::measurement and test data"
+        ]
+      },
+      "dataset::recorded data": {
+        "title": "Fonds 0122B BONNARD René et Pierre et BOY DE LA TOUR Edouard : Projets et réalisation, série B [inventaire]",
+        "type": [
+          "dataset::recorded data"
+        ]
+      },
+      "dataset::données enregistrées": {
+        "title": "Fonds 0224 Comité MESO (Métro Express du Sud-Ouest) : Inventaire",
+        "type": [
+          "dataset::données enregistrées"
+        ]
+      },
+      "dataset::données de simulation": {
+        "title": "Meteorological Time Series Aligned with Projected Temperature Changes",
+        "type": [
+          "dataset::données de simulation"
+        ]
+      },
+      "dataset::geospatial data": {
+        "title": "CH-POA300 -- Hourly Plane-of-Array Solar Irradiance at High Resolution for Switzerland",
+        "type": [
+          "dataset::geospatial data"
+        ]
+      },
+      "dataset::experimental data": {
+        "title": "MDCs and band maps of TiSe2 and TiTe2, on resonance",
+        "type": [
+          "dataset::experimental data"
+        ]
+      },
+      "dataset::données expérimentales": {
+        "title": "Analysis and Reproduction of Stainless-steel Integral Experiments Towards Nuclear Data Assimilation - Supplementary Data and Tables",
+        "type": [
+          "dataset::données expérimentales"
+        ]
+      }
+    }
+  }
+}

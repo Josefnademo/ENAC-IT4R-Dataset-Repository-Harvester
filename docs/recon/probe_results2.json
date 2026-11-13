@@ -1,0 +1,30 @@
+{
+  "non_dataset": {
+    "dc.type:software": {
+      "total": 25,
+      "sampled": 25
+    },
+    "dc.type:other": {
+      "total": 2851,
+      "sampled": 100
+    }
+  },
+  "non_dataset_types": {
+    "student work::semester or other student projects": 85,
+    "other": 14,
+    "software": 12,
+    "software::source code": 7,
+    "software::research software": 5,
+    "text::journal::journal article::software paper": 1,
+    "Controlled Vocabulary for Resource Type Genres::other": 1
+  },
+  "non_dataset_titles": {
+    "software": "Solidipes",
+    "software::research software": "epfLLM Megatron-LLM",
+    "software::source code": "Automatisation du téléversement d'objets numériques dans AtoM (Morphe) à partir d'un CSV",
+    "text::journal::journal article::software paper": "HiddenMarkovModels.jl: generic, fast and reliable state\nspace modeling",
+    "student work::semester or other student projects": "Self-Sensing for Artificial Muscles in Facial Reanimation",
+    "other": "Midi-Conférence et visite guidée de l’exposition \"Patrimoine inclusif: voix et lieux invisibilisés\"",
+    "Controlled Vocabulary for Resource Type Genres::other": "Software image for the assembly of a tubular and syringe based MEWron"
+  }
+}
