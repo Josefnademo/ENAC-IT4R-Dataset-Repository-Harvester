@@ -11,7 +11,7 @@ import logging
 import mimetypes
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from urllib.parse import parse_qs, urlparse
 
 from .config import (

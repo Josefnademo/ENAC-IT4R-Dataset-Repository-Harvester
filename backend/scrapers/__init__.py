@@ -16,7 +16,6 @@ from ..models import HarvestRecord
 STATUS_OK = "ok"
 STATUS_RATE_LIMITED = "rate_limited"
 STATUS_ERROR = "error"
-STATUS_SKIPPED = "skipped"
 
 
 @dataclass

@@ -22,8 +22,6 @@ import webbrowser
 from backend import config
 from backend.logger import configure_logging
 
-DATE_FORMAT = "%Y-%m-%d"
-
 
 def build_parser() -> argparse.ArgumentParser:
     """Command line interface definition."""

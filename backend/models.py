@@ -13,6 +13,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import PurePosixPath
 from typing import Any, Dict, Iterable, List, Optional
+from urllib.parse import urlsplit
 
 from .config import ABSTRACT_LIMIT, ALL_RESOURCE_CLASSES, PLACEHOLDER_VALUE
 
@@ -20,15 +21,7 @@ _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
 _SCRIPT_RE = re.compile(r"<(script|style)[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
 _DOI_PREFIX_RE = re.compile(r"^(?:https?://(?:dx\.)?doi\.org/|doi:\s*)", re.IGNORECASE)
-
-#: Resource classes recognized by the UI filter bar.
-RESOURCE_CLASS_LABELS = {
-    "dataset": "Dataset",
-    "software": "Software",
-    "model": "Model",
-    "workflow": "Workflow",
-    "other": "Other",
-}
+_KEYWORD_SPLIT_RE = re.compile(r"[,;]")
 
 
 # ---------------------------------------------------------------------------
@@ -55,14 +48,6 @@ def clean_text(value: Any, limit: Optional[int] = None) -> str:
     return text
 
 
-def clean_value(value: Any) -> str:
-    """Clean a DSpace metadata value and drop CRIS placeholder sentinels."""
-    text = clean_text(value)
-    if not text or text == PLACEHOLDER_VALUE:
-        return ""
-    return text
-
-
 def unique(values: Iterable[Any]) -> List[str]:
     """De-duplicate while preserving order, dropping empty entries."""
     seen: set = set()
@@ -79,12 +64,23 @@ def unique(values: Iterable[Any]) -> List[str]:
     return result
 
 
-def truncate(text: str, limit: int) -> str:
-    """Clip a string to ``limit`` characters with an ellipsis."""
-    text = text or ""
-    if len(text) <= limit:
-        return text
-    return text[:limit].rstrip() + "..."
+def split_keywords(raw: Any) -> List[str]:
+    """Flatten repository keyword metadata into individual, de-duplicated tags.
+
+    Both APIs regularly return one comma- or semicolon-delimited string inside a
+    single-element list (``["magnonics, nanomagnetism, spin waves"]``), so every
+    part must become its own chip instead of a single merged tag.
+    """
+    if raw is None:
+        return []
+    if isinstance(raw, dict):
+        return split_keywords(raw.get("subject") or raw.get("value"))
+    if isinstance(raw, (list, tuple, set)):
+        parts: List[str] = []
+        for item in raw:
+            parts.extend(split_keywords(item))
+        return unique(parts)
+    return unique(_KEYWORD_SPLIT_RE.split(clean_text(raw)))
 
 
 # ---------------------------------------------------------------------------
@@ -150,34 +146,139 @@ def normalize_doi(value: Any) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Code repository URLs
+# ---------------------------------------------------------------------------
+#: Code-forge hosts; any ``gitlab.*`` instance (``gitlab.com``,
+#: ``gitlab.epfl.ch``, ``gitlab.example.org``) is accepted on top of these.
+CODE_REPO_HOSTS = (
+    "github.com",
+    "bitbucket.org",
+    "codeocean.com",
+    "sourceforge.net",
+)
+
+#: Code-forge links inside free text (markdown ``[label](url)`` included).
+_CODE_URL_IN_TEXT_RE = re.compile(
+    r"(?<![a-z0-9.\-])(?:https?://|www\.)?"
+    r"(?:github\.com|gitlab\.[a-z0-9.\-]+|bitbucket\.org|codeocean\.com|sourceforge\.net)"
+    r"(?:/[^\s<>\"'`\]\)}]*)?",
+    re.IGNORECASE,
+)
+
+
+def normalize_code_repo_url(value: Any) -> str:
+    """Return the canonical repository URL held by ``value``, else ``""``.
+
+    Only allow-listed forges pass, and Pages sites never do. ``http`` becomes
+    ``https``; ``www.``, trailing slashes, ``.git``, query/fragment and
+    in-repository pages (``/tree/...``, ``/-/tree/...``, ``/blob/...``,
+    ``/issues``, ...) are dropped, so the same repository compares equal.
+    """
+    text = str(value or "").strip().strip("<>()[]{}\"'`").rstrip(".,;:!?")
+    if not text:
+        return ""
+    if "://" not in text:
+        text = "https://" + text.lstrip("/")
+    try:
+        parts = urlsplit(text)
+    except ValueError:
+        return ""
+    host = (parts.hostname or "").casefold().rstrip(".")
+    if host.startswith("www."):
+        host = host[4:]
+    is_gitlab = host.startswith("gitlab.") or ".gitlab." in host
+    if not (host in CODE_REPO_HOSTS or is_gitlab):
+        return ""
+    if host.endswith((".github.io", ".gitlab.io")):
+        return ""
+    segments = [segment for segment in parts.path.split("/") if segment]
+    if is_gitlab:
+        # GitLab keeps subgroups; in-repository pages are marked with "/-/".
+        segments = segments[: segments.index("-")] if "-" in segments else segments
+    else:
+        segments = segments[:2]  # <owner>/<repo>: drops /tree/..., /issues, ...
+    if len(segments) < 2:
+        return ""
+    if segments[-1].casefold().endswith(".git"):
+        segments[-1] = segments[-1][:-4]
+    if not segments[-1]:
+        return ""
+    return f"https://{host}/" + "/".join(segments)
+
+
+def extract_code_repo_url(urls: Iterable[str]) -> str:
+    """Return the first URL in ``urls`` that points at a code repository."""
+    if isinstance(urls, str):
+        urls = [urls]
+    for candidate in urls or ():
+        url = normalize_code_repo_url(candidate)
+        if url:
+            return url
+    return ""
+
+
+def extract_code_repo_from_text(value: Any) -> str:
+    """Scan free text (a Zenodo description) for the first code-repository URL.
+
+    The raw value is scanned before the HTML-stripped one so ``href`` targets and
+    ``<https://...>`` links survive :func:`strip_html`.
+    """
+    for haystack in (str(value or ""), clean_text(value)):
+        for match in _CODE_URL_IN_TEXT_RE.finditer(haystack):
+            url = normalize_code_repo_url(match.group(0))
+            if url:
+                return url
+    return ""
+
+
+# ---------------------------------------------------------------------------
 # Resource typing
 # ---------------------------------------------------------------------------
+#: Class for publications. Deliberately *outside* ``ALL_RESOURCE_CLASSES``: the
+#: harvesters drop those records instead of filing them under ``other``.
+PUBLICATION_CLASS = "publication"
+
+#: Raw type families that describe a publication, not a research output.
+_PUBLICATION_MARKERS = (
+    "text::",
+    "publication",
+    "journal",
+    "thesis",
+    "patent",
+    "student work",
+)
+
+
 def classify_resource_type(raw_type: Any) -> str:
-    """Map a raw repository type onto a UI resource class."""
+    """Map a raw repository type onto a UI resource class.
+
+    Datasets, software, models and workflows keep their exact class; a genuine
+    publication — Infoscience ``text::journal::…``, a thesis, a patent, student
+    work or Zenodo ``publication`` — returns :data:`PUBLICATION_CLASS` so the
+    harvester can discard it instead of storing it as ``other``.
+    """
     text = (raw_type or "").strip().casefold()
     if not text:
         return "other"
     root = text.split("::")[0].strip()
-    if root.startswith("dataset"):
-        return "dataset"
-    if root.startswith("software"):
-        return "software"
-    if root.startswith("model"):
-        return "model"
-    if root.startswith("workflow"):
-        return "workflow"
+    for resource_class in ("dataset", "software", "model", "workflow"):
+        if root.startswith(resource_class):
+            return resource_class
     if root in ALL_RESOURCE_CLASSES:
         return root
+    # More specific than the publication markers: a "software paper" stays software.
     if "software" in text:
         return "software"
     if "dataset" in text:
         return "dataset"
+    if any(marker in text for marker in _PUBLICATION_MARKERS):
+        return PUBLICATION_CLASS
     return "other"
 
 
 def format_resource_type(raw_type: Any) -> str:
     """Return the exact resource type string, defaulting to ``other``."""
-    text = clean_value(raw_type)
+    text = clean_text(raw_type)
     return text or "other"
 
 
@@ -281,10 +382,15 @@ class HarvestRecord:
 
     def __post_init__(self) -> None:
         self.resource_type = format_resource_type(self.resource_type)
-        if self.resource_class not in ALL_RESOURCE_CLASSES:
+        # A default "other" is re-derived too: a journal-article type is a
+        # publication, not an "other research product", and must be dropped.
+        if (
+            self.resource_class == "other"
+            or self.resource_class not in ALL_RESOURCE_CLASSES
+        ):
             self.resource_class = classify_resource_type(self.resource_type)
-        self.title = truncate(clean_text(self.title), 600) or "Untitled record"
-        self.abstract = truncate(clean_text(self.abstract), ABSTRACT_LIMIT)
+        self.title = clean_text(self.title, 600) or "Untitled record"
+        self.abstract = clean_text(self.abstract, ABSTRACT_LIMIT)
         self.doi = normalize_doi(self.doi)
         self.authors = unique(self.authors)
         self.affiliations = unique(self.affiliations)
@@ -292,11 +398,12 @@ class HarvestRecord:
         self.unit_managers = unique(self.unit_managers)
         self.author_orcids = unique(self.author_orcids)
         self.funding = unique(self.funding)
-        self.keywords = unique(self.keywords)
+        # Idempotent: even a delimited blob from a future scraper is split here.
+        self.keywords = split_keywords(self.keywords)
         self.source_keys = unique(self.source_keys)
         self.code_repo = clean_text(self.code_repo)
-        self.license = clean_value(self.license)
-        self.access_rights = clean_value(self.access_rights)
+        self.license = clean_text(self.license)
+        self.access_rights = clean_text(self.access_rights)
         self.url = clean_text(self.url)
         self.publication_date = to_date_string(self.publication_date)
         self.created_date = to_date_string(self.created_date)

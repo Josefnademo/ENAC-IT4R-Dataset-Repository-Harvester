@@ -117,11 +117,12 @@ function copyIdentifier(button) {
   });
 }
 
-/** Shared builder: every tag is a button carrying its raw text for the search. */
+/** Shared builder: every tag is a button whose tooltip and filter payload carry
+    the full text, so a CSS-clamped header badge still reveals all of it. */
 function tagButton(value, className) {
   var text = String(value === null || value === undefined ? "" : value);
   return '<button type="button" class="' + className + ' is-filterable" data-filter-tag="' +
-    escapeHtml(text) + '" title="Click to filter by this tag">' + escapeHtml(text) + "</button>";
+    escapeHtml(text) + '" title="' + escapeHtml(text) + '">' + escapeHtml(text) + "</button>";
 }
 
 /** Every tag is rendered whole and stays clickable so it can drive the search. */
@@ -282,6 +283,11 @@ function bindEvents() {
     var copyTarget = event.target.closest("[data-copy]");
     if (copyTarget) {
       copyIdentifier(copyTarget);
+      return;
+    }
+    var toggle = event.target.closest("[data-collapsible-toggle]");
+    if (toggle) {
+      toggleCollapsible(toggle);
       return;
     }
     var tag = event.target.closest("[data-filter-tag]");
@@ -746,8 +752,8 @@ function renderFilterPills() {
   els.filterPills.innerHTML = html;
 }
 
-function metaRow(label, valueHtml, extraClass) {
-  return '<div class="meta-row' + (extraClass ? " " + extraClass : "") + '">' +
+function metaRow(label, valueHtml) {
+  return '<div class="meta-row">' +
     '<span class="meta-label">' + escapeHtml(label) + "</span>" +
     valueHtml +
     "</div>";
@@ -757,29 +763,160 @@ function mutedValue(text) {
   return '<span class="meta-value is-muted">' + escapeHtml(text) + "</span>";
 }
 
-function valueList(values, emptyText) {
+/* ------------------------------------------------------ collapsible content */
+/* One contract for every overflow: a `.collapsible` wrapper whose body is
+   swapped in place (prose) or whose hidden tail is revealed (lists), driven by
+   the single `[data-collapsible-toggle]` pill. A field never mixes controls:
+   prose gets "Show more", lists get "+ N more". */
+var ABSTRACT_CHAR_LIMIT = 280;     /* prose preview on the card */
+var SINGLE_VALUE_CHAR_LIMIT = 160; /* one huge affiliation becomes prose */
+
+function collapsiblePill(moreLabel, lessLabel, extraAttributes) {
+  return '<button type="button" class="inline-expand-btn" data-collapsible-toggle' +
+    ' aria-expanded="false"' +
+    ' data-more-label="' + escapeHtml(moreLabel) + '"' +
+    ' data-less-label="' + escapeHtml(lessLabel) + '"' +
+    (extraAttributes || "") + ">" + escapeHtml(moreLabel) + "</button>";
+}
+
+/** Clip prose at `charLimit` behind a Show more / Show less pill. */
+function renderCollapsibleText(text, charLimit) {
+  var value = String(text === null || text === undefined ? "" : text);
+  if (value.length <= charLimit) {
+    return escapeHtml(value);
+  }
+  var shortText = value.slice(0, charLimit).replace(/\s+$/, "") + "\u2026";
+  return '<span class="collapsible" data-collapsible>' +
+    '<span data-collapsible-body>' + escapeHtml(shortText) + "</span> " +
+    collapsiblePill(
+      "Show more",
+      "Show less",
+      ' data-short="' + escapeHtml(shortText) + '"' +
+        ' data-full="' + escapeHtml(value) + '"'
+    ) +
+  "</span>";
+}
+
+/** Join items, hiding the tail once `maxItems` or the row budget is exceeded. */
+function renderCollapsibleItems(items, options) {
+  var settings = options || {};
+  var textOf =
+    settings.textOf ||
+    function (value) {
+      return String(value === null || value === undefined ? "" : value);
+    };
+  var list = asArray(items).filter(function (value) {
+    return textOf(value).trim() !== "";
+  });
+  if (!list.length) {
+    return "";
+  }
+  var maxItems = settings.maxItems || list.length;
+  var charLimit = settings.charLimit || Infinity;
+  var separator = settings.separator === undefined ? " \u00b7 " : settings.separator;
+  /* Every rendered tag also spends its own padding and the flex gap, so a badge
+     or chip row is budgeted in row characters instead of item count alone. */
+  var itemOverhead = settings.itemOverhead || 0;
+  var renderItem = settings.renderItem || escapeHtml;
+  var shown = [];
+  var hidden = [];
+  var used = 0;
+
+  for (var i = 0; i < list.length; i += 1) {
+    var cost = textOf(list[i]).length + separator.length + itemOverhead;
+    /* The first item always shows, so a lone value never hides behind its own
+       "+ 1 more"; the overflow pill only ever counts genuinely hidden items. */
+    var fits = shown.length === 0 || (shown.length < maxItems && used + cost <= charLimit);
+    if (!hidden.length && fits) {
+      shown.push(renderItem(list[i]));
+      used += cost;
+    } else {
+      hidden.push(renderItem(list[i]));
+    }
+  }
+  if (!hidden.length) {
+    return shown.join(separator);
+  }
+  return '<span class="collapsible" data-collapsible>' +
+    shown.join(separator) +
+    '<span class="collapsible-extra" data-collapsible-hidden hidden>' +
+      (shown.length ? separator : "") + hidden.join(separator) +
+    "</span>" + separator +
+    collapsiblePill("+ " + hidden.length + " more", "Show fewer") +
+  "</span>";
+}
+
+/** Single handler: swap the text body or reveal the hidden tail, then relabel. */
+function toggleCollapsible(button) {
+  var wrapper = button.closest("[data-collapsible]");
+  if (!wrapper) {
+    return;
+  }
+  var expanded = button.getAttribute("aria-expanded") === "true";
+  if (button.hasAttribute("data-full")) {
+    var body = wrapper.querySelector("[data-collapsible-body]");
+    if (body) {
+      body.textContent = button.getAttribute(expanded ? "data-short" : "data-full") || "";
+    }
+  }
+  var hidden = wrapper.querySelectorAll("[data-collapsible-hidden]");
+  for (var i = 0; i < hidden.length; i += 1) {
+    hidden[i].hidden = expanded;
+  }
+  button.setAttribute("aria-expanded", expanded ? "false" : "true");
+  button.textContent =
+    button.getAttribute(expanded ? "data-more-label" : "data-less-label") || "";
+}
+
+/* ------------------------------------------------- lists, tags and badges */
+/** Meta row list: three entries, one single "+ N more" pill. A row that holds
+    one over-long value (a 400-character Zenodo affiliation) is prose instead,
+    so it shows "Show more" — never both controls at once. */
+function metaList(values, emptyText) {
   var list = asArray(values);
   if (!list.length) {
     return mutedValue(emptyText);
   }
-  var text = list
-    .map(function (value) {
-      return escapeHtml(value);
-    })
-    .join(", ");
-  return '<span class="meta-value">' + text + "</span>";
+  var single = String(list[0] === null || list[0] === undefined ? "" : list[0]);
+  if (list.length === 1 && single.length > SINGLE_VALUE_CHAR_LIMIT) {
+    return '<span class="meta-value">' +
+      renderCollapsibleText(single, SINGLE_VALUE_CHAR_LIMIT) + "</span>";
+  }
+  return '<span class="meta-value">' +
+    renderCollapsibleItems(list, { maxItems: 3, charLimit: 180 }) +
+  "</span>";
 }
 
-function renderBadges(values, className) {
-  var list = asArray(values);
-  if (!list.length) {
+/** Header row: affiliations then ENAC units, budgeted by row width. A full row —
+    an institution name plus its acronyms — never collapses, and each badge shows
+    its whole text (wrapping naturally) with the same text in the tooltip and in
+    the click-to-filter payload. */
+function renderHeaderBadges(item) {
+  var badges = [];
+  var affiliations = asArray(item.affiliations);
+  var orgs = asArray(item.parent_orgs);
+  var i;
+  for (i = 0; i < affiliations.length; i += 1) {
+    badges.push({ text: affiliations[i], className: "badge-lab" });
+  }
+  for (i = 0; i < orgs.length; i += 1) {
+    badges.push({ text: orgs[i], className: "badge-org" });
+  }
+  if (!badges.length) {
     return "";
   }
-  var html = "";
-  for (var i = 0; i < list.length; i += 1) {
-    html += filterableBadge(list[i], className);
-  }
-  return html;
+  return renderCollapsibleItems(badges, {
+    maxItems: 8,
+    charLimit: 115,
+    itemOverhead: 4,
+    separator: "",
+    textOf: function (badge) {
+      return String(badge.text);
+    },
+    renderItem: function (badge) {
+      return filterableBadge(badge.text, badge.className);
+    }
+  });
 }
 
 function renderFunding(item) {
@@ -787,13 +924,30 @@ function renderFunding(item) {
   if (!list.length) {
     return mutedValue("No funding metadata");
   }
-  var html = "";
-  for (var i = 0; i < list.length; i += 1) {
-    var label = String(list[i]);
-    var isOrd = /open research data|ord\b|flagship|programme/i.test(label);
-    html += filterableBadge(label, "badge-grant", isOrd ? "is-ord" : "");
-  }
-  return '<span class="badge-row">' + html + "</span>";
+  return '<span class="badge-row">' +
+    renderCollapsibleItems(list, {
+      maxItems: 4,
+      charLimit: 200,
+      separator: "",
+      renderItem: function (label) {
+        var isOrd = /open research data|ord\b|flagship|programme/i.test(String(label));
+        return filterableBadge(label, "badge-grant", isOrd ? "is-ord" : "");
+      }
+    }) +
+  "</span>";
+}
+
+/** Bottom keyword row: chips fill the row before one "+ N more" pill appears. */
+function renderKeywords(item) {
+  return renderCollapsibleItems(item.keywords, {
+    maxItems: 12,
+    charLimit: 125,
+    itemOverhead: 4,
+    separator: "",
+    renderItem: function (value) {
+      return tagButton(value, "keyword-chip");
+    }
+  });
 }
 
 function renderFiles(item) {
@@ -856,17 +1010,16 @@ function renderDates(item) {
 }
 
 
+/* Consortium papers list 100+ authors: six inline, then "+ N more". The middle
+   dot separator keeps each "Lastname, Firstname" pair readable. */
 function renderAuthors(item) {
   var authors = asArray(item.authors);
   if (!authors.length) {
     return mutedValue("Not listed");
   }
-  var names = authors
-    .map(function (name) {
-      return escapeHtml(name);
-    })
-    .join(", ");
-  return '<span class="meta-value">' + names + "</span>";
+  return '<span class="meta-value">' +
+    renderCollapsibleItems(authors, { maxItems: 6, separator: " \u00b7 " }) +
+  "</span>";
 }
 
 function renderCard(item) {
@@ -888,13 +1041,12 @@ function renderCard(item) {
   var doiIsDuplicate = !merged && isInfoscienceDoi(item.doi) && isInfoscienceUrl(recordUrl);
   var zenodoUrl = merged ? doiUrl : "";
 
-  var keywords = asArray(item.keywords);
-  var keywordHtml = "";
-  for (var i = 0; i < keywords.length; i += 1) {
-    keywordHtml += tagButton(keywords[i], "keyword-chip");
-  }
+  var keywordHtml = renderKeywords(item);
 
-  var abstract = item.abstract ? escapeHtml(item.abstract) : "";
+  var abstract = item.abstract
+    ? '<p class="card-abstract">' +
+      renderCollapsibleText(item.abstract, ABSTRACT_CHAR_LIMIT) + "</p>"
+    : "";
 
   return '<article class="dataset-card' +
     (item.sync_status === "new" ? " is-new" : "") +
@@ -902,8 +1054,7 @@ function renderCard(item) {
     '<div class="card-badges">' +
       '<span class="badge badge-type">' + escapeHtml(type) + "</span>" +
       '<span class="badge badge-source">' + escapeHtml(sourceLabel(item)) + "</span>" +
-      renderBadges(item.affiliations, "badge-lab") +
-      renderBadges(item.parent_orgs, "badge-org") +
+      renderHeaderBadges(item) +
       syncBadge +
     "</div>" +
     '<h3 class="card-title">' +
@@ -914,12 +1065,12 @@ function renderCard(item) {
     "</h3>" +
     '<div class="card-meta">' +
       metaRow("Authors", renderAuthors(item)) +
-      metaRow("PI / Lab head", valueList(item.unit_managers, "Not published")) +
-      metaRow("EPFL labs", valueList(item.affiliations, "Not mapped to an EPFL unit")) +
-      metaRow("ENAC units", valueList(item.parent_orgs, "Not reported")) +
+      metaRow("PI / Lab head", metaList(item.unit_managers, "Not published")) +
+      metaRow("EPFL labs", metaList(item.affiliations, "Not mapped to an EPFL unit")) +
+      metaRow("ENAC units", metaList(item.parent_orgs, "Not reported")) +
       metaRow("Funding", renderFunding(item)) +
     "</div>" +
-    (abstract ? '<p class="card-abstract">' + abstract + "</p>" : "") +
+    abstract +
     '<div class="card-details">' +
       '<div class="detail"><span class="detail-label">Date</span>' +
         renderDates(item) + "</div>" +

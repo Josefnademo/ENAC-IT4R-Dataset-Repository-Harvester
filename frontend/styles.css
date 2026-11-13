@@ -614,8 +614,11 @@ input[type="date"]:focus,
 .dataset-card {
   margin-bottom: 1.5rem;
   padding: 1.3rem 1.4rem;
-  box-shadow: var(--shadow-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   border-left: 4px solid var(--epfl-red);
+  box-shadow: var(--shadow-md);
 }
 
 .dataset-card:last-child {
@@ -628,14 +631,6 @@ input[type="date"]:focus,
   align-items: center;
   gap: 0.4rem;
   margin-bottom: 0.55rem;
-}
-
-.card-date {
-  margin-left: auto;
-  font-size: 0.76rem;
-  font-weight: 600;
-  color: var(--ink-muted);
-  white-space: nowrap;
 }
 
 .card-title {
@@ -661,10 +656,6 @@ input[type="date"]:focus,
   color: var(--ink-soft);
   font-size: 0.87rem;
   line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .card-meta {
@@ -674,10 +665,6 @@ input[type="date"]:focus,
   margin: 0;
   padding-top: 0.85rem;
   border-top: 1px solid var(--border);
-}
-
-.meta-item {
-  min-width: 0;
 }
 
 .meta-label {
@@ -741,6 +728,50 @@ input[type="date"]:focus,
   border-color: var(--border-strong);
 }
 
+/* Collapsible content: one contract for clipped text, item lists and badge
+   groups. `display: contents` lets a revealed tail join the parent flow, so
+   inline lists keep their spacing and flex rows keep their gap. */
+.collapsible,
+.collapsible-extra {
+  display: contents;
+}
+
+.collapsible-extra[hidden] {
+  display: none;
+}
+
+.collapsible [data-collapsible-body] {
+  overflow-wrap: anywhere;
+}
+
+.inline-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.4rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 0.02rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  line-height: 1.5;
+  color: var(--epfl-red);
+  background: var(--gray-soft);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.inline-expand-btn:hover {
+  background: rgba(226, 6, 19, 0.08);
+  border-color: var(--epfl-red);
+}
+
+.inline-expand-btn:focus-visible {
+  outline: 2px solid var(--epfl-red);
+  outline-offset: 2px;
+}
+
 .card-links {
   margin-left: auto;
   display: flex;
@@ -777,7 +808,8 @@ input[type="date"]:focus,
   overflow-wrap: anywhere;
 }
 
-/* Tags double as search filters: full text, natural wrapping, no clipping. */
+/* Tags double as search filters: full text in the payload, natural wrapping, no
+   clipping. Header badges are the one clamped exception (see `.card-badges .badge`). */
 .badge.is-filterable,
 .keyword-chip.is-filterable {
   cursor: pointer;
@@ -875,12 +907,6 @@ input[type="date"]:focus,
 }
 
 /* ------------------------------------------------- card details & states */
-.dataset-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
 .dataset-card.is-new {
   border-left-color: var(--green-ink);
 }
@@ -891,10 +917,6 @@ input[type="date"]:focus,
 
 .meta-row {
   min-width: 0;
-}
-
-.badge-type {
-  max-width: 100%;
 }
 
 .card-details {
@@ -1029,9 +1051,5 @@ input[type="date"]:focus,
   .metric-grid,
   .btn-row {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .card-date {
-    margin-left: 0;
   }
 }

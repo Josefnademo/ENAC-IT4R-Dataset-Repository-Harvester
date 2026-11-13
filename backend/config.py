@@ -17,7 +17,6 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 FRONTEND_DIR = BASE_DIR / "frontend"
-DOCS_DIR = BASE_DIR / "docs"
 
 DB_PATH = Path(os.environ.get("HARVESTER_DB", DATA_DIR / "harvester.db"))
 JSON_MIRROR_PATH = Path(
@@ -32,7 +31,6 @@ APP_VERSION = "1.5.0"
 # ---------------------------------------------------------------------------
 HOST = "127.0.0.1"
 PORT = 8080
-SERVER_BACKLOG = 64
 
 # ---------------------------------------------------------------------------
 # HTTP identity shared by both clients
@@ -61,9 +59,7 @@ ZENODO_MAX_PAGES = 60           # 60 * 25 = 1500 records ceiling per run
 ZENODO_DELAY_SECONDS = 2.0      # polite pacing between pages
 ZENODO_RATE_LIMIT_FLOOR = 3     # pause when X-RateLimit-Remaining <= 3
 ZENODO_RATE_LIMIT_PAUSE = 15.0  # seconds to cool down
-ZENODO_RATE_LIMIT_WINDOW = "30 requests / 60 s"
 ZENODO_SORT = "newest"
-ZENODO_DATE_FIELD = "created"
 
 # ---------------------------------------------------------------------------
 # EPFL Infoscience (DSpace 7 CRIS)
@@ -76,9 +72,7 @@ INFOSCIENCE_PAGE_SIZE = 100     # never >100: DSpace clamps objects but not offs
 INFOSCIENCE_FIRST_PAGE = 0      # strictly 0-indexed
 INFOSCIENCE_MAX_PAGES = 3       # CloudFront burst budget: 3 * 100 records / run
 INFOSCIENCE_DELAY_SECONDS = 6.5  # host-wide 429 after ~13 calls / 2 minutes
-INFOSCIENCE_RETRY_AFTER_DEFAULT = 900  # seconds advertised by Retry-After
 INFOSCIENCE_SORT = "dc.date.accessioned,desc"
-INFOSCIENCE_DATE_FIELD = "dc.date.accessioned"
 
 # AWS WAF Bot Control: requests may be answered with a CAPTCHA challenge that the
 # OS-native TLS stack (curl / Schannel) is allowed to pass.
@@ -139,9 +133,25 @@ RESOURCE_FILTERS = {
     "all": {
         "label": "All Works",
         "pill": "All Works",
-        "description": "Every research output in the window, whatever its type.",
-        "zenodo_query": "",
-        "infoscience_query": "",
+        "description": (
+            "Every listable research output (datasets, software, models, "
+            "workflows, other products) — never journal articles or student work."
+        ),
+        # Never an unfiltered query: an empty Infoscience clause returns ~197 000
+        # journal articles, and the 300-record page cap would then stop before
+        # reaching any dataset from an earlier month.
+        "zenodo_query": (
+            "(resource_type.type:dataset OR resource_type.type:software "
+            "OR resource_type.type:model OR resource_type.type:workflow "
+            "OR resource_type.type:other OR resource_type.type:image "
+            "OR resource_type.type:video OR resource_type.type:poster "
+            "OR resource_type.type:presentation)"
+        ),
+        "infoscience_query": (
+            '((dc.type:dataset OR dc.type:software OR dc.type:model '
+            "OR dc.type:workflow OR dc.type:other) "
+            'AND NOT dc.type:"student work" AND NOT dc.type:patent)'
+        ),
         "classes": ["dataset", "software", "model", "workflow", "other"],
     },
 }
@@ -159,6 +169,10 @@ ABSTRACT_LIMIT = 1200
 # coalesced into their predecessor and older rows are pruned beyond this cap
 # (see ``Storage.record_run``).
 MAX_HARVEST_RUNS_HISTORY = 25
+
+# Per query scope ``(resource_type, date_from, date_to)`` only the previous and
+# the current run are kept, so re-running one window never piles up rows.
+MAX_RUNS_PER_SCOPE = 2
 
 # Fields compared on every upsert: a difference marks the row ``updated``.
 TRACKED_FIELDS = (
@@ -180,19 +194,4 @@ SOURCE_LABELS = {
     "zenodo": "Zenodo (EPFL Community)",
     "infoscience": "Infoscience (DSpace 7)",
     "merged": "Infoscience + Zenodo",
-}
-
-# File extensions worth surfacing for the ENAC-IT4R outreach work.
-NOTABLE_EXTENSIONS = (
-    ".nc", ".zarr", ".gpkg", ".csv", ".parquet", ".hdf5", ".h5", ".tif",
-    ".tiff", ".shp", ".geojson", ".json", ".zip", ".tar", ".gz", ".py",
-    ".r", ".jl", ".m", ".mat", ".nc4", ".grib", ".sql", ".ipynb",
-)
-
-DATE_PRESETS = {
-    "7d": 7,
-    "14d": 14,
-    "30d": 30,
-    "90d": 90,
-    "365d": 365,
 }

@@ -8,13 +8,15 @@ Infoscience keeps the Zenodo results, and vice versa.
 from __future__ import annotations
 
 import logging
+import re
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 
 from .config import (
+    ALL_RESOURCE_CLASSES,
     DEFAULT_RESOURCE_FILTER,
     RESOURCE_FILTERS,
     SOURCE_LABELS,
@@ -35,10 +37,6 @@ _run_lock = threading.Lock()
 
 class HarvestBusyError(RuntimeError):
     """Raised when a second harvest is requested while one is running."""
-
-
-class HarvestWindowError(ValueError):
-    """Raised when the requested date window cannot be parsed."""
 
 
 # ---------------------------------------------------------------------------
@@ -64,6 +62,34 @@ def _preferred_text(primary: str, secondary: str) -> str:
     if primary and primary != "Untitled record":
         return primary
     return secondary or primary
+
+
+_PAREN_SUFFIX_RE = re.compile(r"\s*\([^()]*\)\s*$")
+
+
+def _funding_key(label: str) -> str:
+    """Comparison key: case-folded label without a trailing ``(ACRONYM)``."""
+    return _PAREN_SUFFIX_RE.sub("", label).strip().casefold()
+
+
+def _merge_funding(infoscience: List[str], zenodo: List[str]) -> List[str]:
+    """Infoscience funding wins; Zenodo only adds grants it has not listed yet.
+
+    Zenodo appends the programme acronym (``... Exascale (EoCoE-III)``) where
+    Infoscience holds the plain title, so labels are compared on their
+    acronym-stripped, case-folded base and either substring counts as the same
+    grant.
+    """
+    if not infoscience:
+        return unique(zenodo)
+    labels = unique(infoscience)
+    keys = [key for key in map(_funding_key, labels) if key]
+    for label in zenodo:
+        key = _funding_key(label)
+        if key and not any(key in known or known in key for known in keys):
+            labels.append(label)
+            keys.append(key)
+    return labels
 
 
 def _merge_pair(
@@ -93,7 +119,7 @@ def _merge_pair(
         author_orcids=unique(
             list(infoscience.author_orcids) + list(zenodo.author_orcids)
         ),
-        funding=unique(list(infoscience.funding) + list(zenodo.funding)),
+        funding=_merge_funding(infoscience.funding, zenodo.funding),
         code_repo=zenodo.code_repo or infoscience.code_repo,
         file_summary=zenodo.file_summary
         if zenodo.file_summary.get("count")
@@ -109,14 +135,37 @@ def _merge_pair(
     )
 
 
+def _listable(records: Iterable[HarvestRecord]) -> List[HarvestRecord]:
+    """Keep only the classes the UI can list, dropping publications.
+
+    ``classify_resource_type`` marks journal articles, theses, patents and
+    student work as ``publication``, which is outside ``ALL_RESOURCE_CLASSES``:
+    such a record must never create or refresh a row.
+    """
+    kept: List[HarvestRecord] = []
+    dropped: Dict[str, int] = {}
+    for record in records:
+        if record.resource_class in ALL_RESOURCE_CLASSES:
+            kept.append(record)
+        else:
+            dropped[record.resource_class] = dropped.get(record.resource_class, 0) + 1
+    if dropped:
+        logger.info(
+            "Dropped %d record(s) outside the UI taxonomy: %s",
+            sum(dropped.values()),
+            ", ".join(f"{name}={count}" for name, count in sorted(dropped.items())),
+        )
+    return kept
+
+
 def merge_records(
     zenodo_records: Iterable[HarvestRecord],
     infoscience_records: Iterable[HarvestRecord],
 ) -> Tuple[List[HarvestRecord], int]:
-    """De-duplicate by canonical id and merge cross-repository DOI twins."""
+    """Drop publications, de-duplicate by canonical id, merge DOI twins."""
     zenodo_index: Dict[str, HarvestRecord] = {}
     zenodo_order: List[str] = []
-    for record in zenodo_records:
+    for record in _listable(zenodo_records):
         key = record.canonical_id
         existing = zenodo_index.get(key)
         if existing is None:
@@ -129,7 +178,7 @@ def merge_records(
     consumed: set = set()
     merged_count = 0
 
-    for record in infoscience_records:
+    for record in _listable(infoscience_records):
         key = record.canonical_id
         if key in consumed:
             continue

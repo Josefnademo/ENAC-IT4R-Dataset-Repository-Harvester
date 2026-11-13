@@ -20,6 +20,7 @@ from .config import (
     DB_PATH,
     JSON_MIRROR_PATH,
     MAX_HARVEST_RUNS_HISTORY,
+    MAX_RUNS_PER_SCOPE,
     SCHEMA_VERSION,
     SOURCE_LABELS,
     TRACKED_FIELDS,
@@ -38,6 +39,17 @@ JSON_FIELDS = (
     "funding",
     "keywords",
     "file_summary",
+)
+
+#: Fields only Infoscience resolves (EPFL hierarchy, funders, handle URL, ingest
+#: date). A single-source snapshot must never blank them on a merged row.
+INFOSCIENCE_AUTHORITATIVE_FIELDS = (
+    "affiliations",
+    "parent_orgs",
+    "unit_managers",
+    "funding",
+    "url",
+    "created_date",
 )
 
 COLUMNS = (
@@ -79,6 +91,10 @@ RUN_SCOPE_FIELDS = (
     "zenodo_status",
     "infoscience_status",
 )
+
+#: Retention key of a query scope: one window only ever needs the previous run
+#: and the current one (``MAX_RUNS_PER_SCOPE``), whatever the metadata churn.
+RUN_SCOPE_KEYS = ("resource_type", "date_from", "date_to")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records (
@@ -141,6 +157,17 @@ def _encode(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
+def _json_column(value: Any, default: Any) -> Any:
+    """Decode a JSON-encoded column, tolerating blank or legacy values."""
+    if isinstance(value, type(default)):
+        return value
+    try:
+        decoded = json.loads(value) if value else default
+    except (TypeError, ValueError):
+        return default
+    return decoded if isinstance(decoded, type(default)) else default
+
+
 def _scope_value(value: Any) -> str:
     """Comparison key for run scope fields: ``None`` equals the empty string."""
     return "" if value is None else str(value).strip()
@@ -200,15 +227,37 @@ class Storage:
             stored = previous.get(field_name)
             incoming = fresh.get(field_name)
             if field_name in JSON_FIELDS:
-                try:
-                    stored = json.loads(stored) if isinstance(stored, str) else stored
-                except (TypeError, ValueError):
-                    stored = []
-                if list(stored or []) != list(incoming or []):
+                if _json_column(stored, []) != list(incoming or []):
                     return True
             elif (stored or "") != (incoming or ""):
                 return True
         return False
+
+    @staticmethod
+    def _preserve_merged(previous: Dict[str, Any], record: HarvestRecord) -> None:
+        """Keep what a merged row knows when a single-source snapshot arrives.
+
+        A partial run — Infoscience stopped by its 300-record page cap, Zenodo
+        answering 429, a narrower window — must not wipe the EPFL hierarchy,
+        funding or file inventory that the ``Infoscience + Zenodo`` row holds.
+        Only a strict superset of the incoming ``source_keys`` triggers this.
+        """
+        incoming_keys = list(record.source_keys)
+        stored_keys = _json_column(previous.get("source_keys"), [])
+        if not set(stored_keys) > set(incoming_keys):
+            return
+        zenodo_only = "infoscience" not in incoming_keys
+        record.source = previous.get("source") or record.source
+        record.source_keys = stored_keys
+        for field_name in INFOSCIENCE_AUTHORITATIVE_FIELDS:
+            default = [] if field_name in JSON_FIELDS else ""
+            stored_value = _json_column(previous.get(field_name), default)
+            if stored_value and (zenodo_only or not getattr(record, field_name)):
+                setattr(record, field_name, stored_value)
+        if not record.file_summary.get("count"):
+            stored_files = _json_column(previous.get("file_summary"), {})
+            if stored_files:
+                record.file_summary = stored_files
 
     # -- writes -----------------------------------------------------------
     def upsert_records(self, records: Iterable[HarvestRecord]) -> Dict[str, int]:
@@ -239,6 +288,8 @@ class Storage:
                     continue
 
                 previous = dict(existing)
+                # A merged row outranks a single-source snapshot (see _preserve_merged).
+                self._preserve_merged(previous, record)
                 record.first_seen = previous.get("first_seen") or now
                 record.last_seen = now
 
@@ -300,6 +351,28 @@ class Storage:
             and cls._same_scope(stored, run)
         )
 
+    def _prune_scope_runs(self, run: Dict[str, Any]) -> int:
+        """Keep only the newest ``MAX_RUNS_PER_SCOPE`` runs of this query scope."""
+        scope = tuple(_scope_value(run.get(field)) for field in RUN_SCOPE_KEYS)
+        where = " AND ".join(f"COALESCE({field}, '') = ?" for field in RUN_SCOPE_KEYS)
+        return self._conn.execute(
+            f"DELETE FROM harvest_runs WHERE {where} AND id NOT IN "
+            f"(SELECT id FROM harvest_runs WHERE {where} ORDER BY id DESC LIMIT ?)",
+            scope + scope + (MAX_RUNS_PER_SCOPE,),
+        ).rowcount
+
+    @staticmethod
+    def _log_retention(pruned: int) -> None:
+        """Log a retention sweep that actually deleted rows."""
+        if pruned > 0:
+            logger.info(
+                "harvest_runs retention: pruned %d row(s) (newest %d per scope, "
+                "%d total)",
+                pruned,
+                MAX_RUNS_PER_SCOPE,
+                MAX_HARVEST_RUNS_HISTORY,
+            )
+
     def record_run(self, run: Dict[str, Any]) -> Dict[str, Any]:
         """Record one harvest execution, coalescing repeated zero-change runs.
 
@@ -307,9 +380,9 @@ class Storage:
         duplicate row: a zero-change run whose scope (``RUN_SCOPE_FIELDS``)
         matches an equally zero-change newest row refreshes that row's
         ``run_at``, ``duration_seconds`` and ``total_records`` instead. Every
-        real insert then prunes the table down to the newest
-        ``MAX_HARVEST_RUNS_HISTORY`` rows, so history stays bounded while the
-        current run always keeps a predecessor to compare against.
+        write then keeps at most ``MAX_RUNS_PER_SCOPE`` rows for the same
+        ``(resource_type, date_from, date_to)`` scope — previous and current —
+        and trims the table back to ``MAX_HARVEST_RUNS_HISTORY`` rows overall.
 
         Returns ``{"id": <row id>, "coalesced": <bool>}``.
         """
@@ -332,7 +405,6 @@ class Storage:
         )
         values = [run.get(column) for column in columns]
         values[0] = values[0] or utc_now_iso()
-        pruned = 0
         with self._lock:
             latest = self._conn.execute(
                 "SELECT * FROM harvest_runs ORDER BY id DESC LIMIT 1"
@@ -350,6 +422,7 @@ class Storage:
                         row_id,
                     ),
                 )
+                pruned = self._prune_scope_runs(run)
                 self._conn.commit()
                 logger.info(
                     "Repeated zero-change harvest coalesced into run #%d "
@@ -359,6 +432,7 @@ class Storage:
                     run.get("date_to") or "*",
                     run.get("resource_type") or "all",
                 )
+                self._log_retention(pruned)
                 return {"id": row_id, "coalesced": True}
 
             cursor = self._conn.execute(
@@ -371,15 +445,10 @@ class Storage:
                 "DELETE FROM harvest_runs WHERE id NOT IN "
                 "(SELECT id FROM harvest_runs ORDER BY id DESC LIMIT ?)",
                 (MAX_HARVEST_RUNS_HISTORY,),
-            ).rowcount
+            ).rowcount + self._prune_scope_runs(run)
             self._conn.commit()
 
-        if pruned > 0:
-            logger.info(
-                "harvest_runs retention: pruned %d row(s), newest %d kept",
-                pruned,
-                MAX_HARVEST_RUNS_HISTORY,
-            )
+        self._log_retention(pruned)
         return {"id": row_id, "coalesced": False}
 
     # -- reads ------------------------------------------------------------

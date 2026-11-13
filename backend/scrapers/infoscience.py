@@ -44,7 +44,10 @@ from ..models import (
     HarvestRecord,
     classify_resource_type,
     clean_text,
+    extract_code_repo_url,
+    normalize_code_repo_url,
     normalize_doi,
+    split_keywords,
     to_date_string,
     unique,
 )
@@ -59,19 +62,6 @@ SOURCE_LABEL = "Infoscience (DSpace 7)"
 CURL_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
-)
-
-#: Hosts/patterns that identify a code repository inside ``epfl.url``.
-CODE_REPO_MARKERS = (
-    "github.com",
-    "gitlab",
-    "bitbucket",
-    "codeocean",
-    "sourceforge",
-    "r-universe",
-    "pypi.org",
-    "cran.r-project.org",
-    "zenodo.org/record",
 )
 
 
@@ -255,30 +245,30 @@ def _first(metadata: Dict[str, Any], key: str) -> str:
 
 
 def _code_repository(metadata: Dict[str, Any]) -> str:
-    """Pick the first ``epfl.url`` that really is a code repository."""
+    """Resolve ``code_repo``: ``epfl.url`` first, then ``datacite.relatedIdentifier``.
+
+    ``epfl.url`` is authoritative, but the CRIS only fills it for some record
+    types; projects such as Solidipes publish the repository in the DataCite
+    related identifiers instead. Non-forge links (DOI, Zenodo, publishers) are
+    rejected by :func:`normalize_code_repo_url`.
+    """
     urls = _entries(metadata, "epfl.url")
     descriptions = _entries(metadata, "epfl.url.description")
     for index, entry in enumerate(urls):
-        if isinstance(entry, dict):
-            url = clean_text(entry.get("value"))
-        else:
-            url = clean_text(entry)
+        url = clean_text(entry.get("value") if isinstance(entry, dict) else entry)
         if not url:
             continue
-        description = ""
-        if index < len(descriptions):
-            raw_description = descriptions[index]
-            if isinstance(raw_description, dict):
-                description = clean_text(raw_description.get("value"))
-            else:
-                description = clean_text(raw_description)
-        haystack = url.casefold()
-        descriptor = description.casefold()
-        if any(marker in haystack for marker in CODE_REPO_MARKERS):
-            return url
-        if "code" in descriptor or "repository" in descriptor or "source" in descriptor:
-            return url
-    return ""
+        code_url = normalize_code_repo_url(url)
+        if code_url:
+            return code_url
+        # Any other URL only counts as a repository when the CRIS says it is one.
+        description = descriptions[index] if index < len(descriptions) else ""
+        descriptor = clean_text(
+            description.get("value") if isinstance(description, dict) else description
+        ).casefold()
+        if any(word in descriptor for word in ("code", "repository", "source")):
+            return url.rstrip("/")
+    return extract_code_repo_url(_values(metadata, "datacite.relatedIdentifier"))
 
 
 def _fallback_id(metadata: Dict[str, Any], handle: str, uuid: str) -> str:
@@ -339,7 +329,7 @@ def _record_from_object(indexable: Dict[str, Any]) -> HarvestRecord:
         funding=_values(metadata, "dc.relation.funding"),
         code_repo=_code_repository(metadata),
         file_summary={},
-        keywords=_values(metadata, "dc.subject"),
+        keywords=split_keywords(_values(metadata, "dc.subject")),
         license=license_value,
         access_rights=_first(metadata, "datacite.rights"),
         doi=doi,

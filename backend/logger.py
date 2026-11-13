@@ -90,11 +90,3 @@ def log_snapshot(since: int = 0) -> Dict[str, Any]:
         entries: List[Dict[str, Any]] = [e for e in _buffer if e.get("id", 0) > since]
         cursor = _cursor
     return {"cursor": cursor, "entries": entries, "app": APP_NAME}
-
-
-def reset_logs() -> None:
-    """Clear the ring buffer (used by tests and by ``--harvest`` CLI runs)."""
-    global _cursor
-    with _lock:
-        _buffer.clear()
-        _cursor = 0

@@ -10,6 +10,7 @@ Verified protocol rules (see docs/TECHNICAL_ARCHITECTURE.md section 4):
 from __future__ import annotations
 
 import logging
+import re
 import time
 from typing import Any, Dict, List, Optional
 
@@ -33,8 +34,13 @@ from ..models import (
     build_file_summary,
     classify_resource_type,
     clean_text,
+    extract_code_repo_from_text,
+    extract_code_repo_url,
+    normalize_code_repo_url,
     normalize_doi,
+    split_keywords,
     to_date_string,
+    unique,
 )
 from . import STATUS_ERROR, STATUS_OK, STATUS_RATE_LIMITED, FetchResult
 
@@ -42,6 +48,17 @@ logger = logging.getLogger("enac_it4r.harvester")
 
 SOURCE_KEY = "zenodo"
 SOURCE_LABEL = "Zenodo (EPFL Community)"
+
+#: InvenioRDM relations that most often point at the code of a record, in
+#: decreasing order of usefulness. Any other relation is still accepted when its
+#: identifier resolves to a known code forge.
+CODE_RELATION_PRIORITY = (
+    "isversionof",
+    "issupplementto",
+    "isderivedfrom",
+    "isidenticalto",
+    "isdocumentedby",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -107,7 +124,18 @@ def _creator_fields(metadata: Dict[str, Any]) -> Dict[str, List[str]]:
     return {"authors": authors, "affiliations": affiliations, "author_orcids": orcids}
 
 
+#: Funder grant identifiers (``200021-227992``, ``2024-A0160502224``) are codes,
+#: not programme names, so they never become funding labels.
+_GRANT_CODE_RE = re.compile(r"\d{4,}")
+
+
 def _grant_labels(metadata: Dict[str, Any]) -> List[str]:
+    """Funding badges from ``metadata.grants``: grant title and/or acronym.
+
+    ``grant.code`` is the funder's internal number and is deliberately never
+    emitted; an acronym is only kept when it names a programme (``NCCR SPIN``,
+    ``EoCoE-III``), never when it looks like a grant ID.
+    """
     labels: List[str] = []
     for grant in metadata.get("grants") or []:
         if not isinstance(grant, dict):
@@ -117,16 +145,13 @@ def _grant_labels(metadata: Dict[str, Any]) -> List[str]:
             continue
         title = clean_text(grant.get("title"))
         acronym = clean_text(grant.get("acronym"))
-        code = clean_text(grant.get("code"))
-        if title and acronym:
-            labels.append(f"{title} ({acronym})")
-        elif title:
-            labels.append(title)
-        elif acronym:
-            labels.append(acronym)
-        elif code:
-            labels.append(code)
-    return labels
+        # A grant ID, or an acronym the title already carries, adds nothing.
+        if _GRANT_CODE_RE.search(acronym) or acronym.casefold() in title.casefold():
+            acronym = ""
+        label = f"{title} ({acronym})" if title and acronym else title or acronym
+        if label:
+            labels.append(label)
+    return unique(labels)
 
 
 def _resource_type(metadata: Dict[str, Any]) -> str:
@@ -160,21 +185,66 @@ def _access_rights(metadata: Dict[str, Any]) -> str:
     return ""
 
 
-def _keywords(metadata: Dict[str, Any]) -> List[str]:
-    raw = metadata.get("keywords")
-    if isinstance(raw, str):
-        return [part.strip() for part in raw.replace(";", ",").split(",") if part.strip()]
-    if isinstance(raw, list):
-        keywords: List[str] = []
-        for entry in raw:
-            if isinstance(entry, dict):
-                text = clean_text(entry.get("subject") or entry.get("value"))
-            else:
-                text = clean_text(entry)
-            if text:
-                keywords.append(text)
-        return keywords
-    return []
+def _relation_key(value: Any) -> str:
+    """Normalize a ``related_identifiers[].relation`` for comparison."""
+    return re.sub(r"[^a-z0-9]", "", clean_text(value).casefold())
+
+
+def _related_code_repo(metadata: Dict[str, Any]) -> str:
+    """Pick a code-forge URL out of ``metadata.related_identifiers``.
+
+    Entries are grouped by relation so the documented priority
+    (``isVersionOf`` -> ``isSupplementTo`` -> ``isDerivedFrom`` ->
+    ``isIdenticalTo`` -> ``isDocumentedBy``) wins over array order; every other
+    relation is only consulted afterwards, and only when its identifier is a
+    URL (DOI identifiers are ignored).
+    """
+    entries = metadata.get("related_identifiers")
+    if isinstance(entries, dict):
+        entries = [entries]
+    if not isinstance(entries, list):
+        return ""
+
+    grouped: Dict[str, List[str]] = {}
+    remaining: List[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        identifier = clean_text(entry.get("identifier"))
+        if not identifier:
+            continue
+        scheme = clean_text(entry.get("scheme")).casefold()
+        is_url = "://" in identifier or identifier.casefold().startswith("www.")
+        if scheme not in ("url", "") and not is_url:
+            continue
+        relation = _relation_key(entry.get("relation"))
+        if relation in CODE_RELATION_PRIORITY:
+            grouped.setdefault(relation, []).append(identifier)
+        elif is_url:
+            remaining.append(identifier)
+
+    for relation in CODE_RELATION_PRIORITY:
+        url = extract_code_repo_url(grouped.get(relation, ()))
+        if url:
+            return url
+    return extract_code_repo_url(remaining)
+
+
+def _code_repo(metadata: Dict[str, Any], custom: Dict[str, Any]) -> str:
+    """Resolve ``code_repo``: custom field -> related identifiers -> description.
+
+    ``metadata.custom["code:codeRepository"]`` is only populated for records
+    created through Zenodo's GitHub webhook; GitLab (and other self-hosted)
+    projects advertise their repository in ``related_identifiers`` or, as a last
+    resort, in the free-text description.
+    """
+    declared = _as_text(custom.get("code:codeRepository"))
+    if declared:
+        return normalize_code_repo_url(declared) or declared.rstrip("/")
+    related = _related_code_repo(metadata)
+    if related:
+        return related
+    return extract_code_repo_from_text(metadata.get("description"))
 
 
 def _record_from_hit(hit: Dict[str, Any]) -> HarvestRecord:
@@ -208,9 +278,9 @@ def _record_from_hit(hit: Dict[str, Any]) -> HarvestRecord:
         unit_managers=[],
         author_orcids=creators["author_orcids"],
         funding=_grant_labels(metadata),
-        code_repo=_as_text(custom.get("code:codeRepository")),
+        code_repo=_code_repo(metadata, custom),
         file_summary=build_file_summary(hit.get("files")),
-        keywords=_keywords(metadata),
+        keywords=split_keywords(metadata.get("keywords")),
         license=_license_id(metadata),
         access_rights=_access_rights(metadata),
         doi=doi,
