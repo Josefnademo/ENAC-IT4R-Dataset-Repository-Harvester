@@ -1,11 +1,16 @@
 """Bounded, read-only preview of remote record files.
 
-The dashboard lets a researcher glance at a CSV, a GeoJSON or the table of
-contents of a multi-gigabyte ZIP without downloading the record. This module
+The dashboard lets a researcher glance at a CSV, a PDF, source code or the table
+of contents of a multi-gigabyte ZIP without downloading the record. This module
 therefore never reads more than a hard byte budget per format, and inspects
 remote ZIP archives through HTTP ``Range`` requests so that only the central
 directory travels over the wire. A file stored inside such an archive can be
 previewed on its own (``inner`` argument): only that member's bytes are read.
+
+``PREVIEW_REGISTRY`` is the single declarative table mapping every previewable
+extension (or exact basename such as ``Makefile``) to a handler kind and its
+byte budget, and direct URLs and ZIP members both render through the same
+byte parsers.
 
 Security: only ``https://`` URLs on ``zenodo.org`` or ``infoscience.epfl.ch``
 are accepted (SSRF allow-list), and every fetch is bounded.
@@ -24,6 +29,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlsplit
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from .config import REQUEST_HEADERS
 from .models import build_file_summary, file_extension, human_size
@@ -32,11 +39,6 @@ logger = logging.getLogger("enac_it4r.harvester")
 
 #: Hosts the preview endpoint may read from (SSRF allow-list).
 ALLOWED_HOSTS = ("zenodo.org", "infoscience.epfl.ch")
-
-TABULAR_EXTENSIONS = (".csv", ".tsv")
-STRUCTURED_EXTENSIONS = (".geojson", ".json")
-TEXT_EXTENSIONS = (".txt", ".md", ".yml", ".yaml")
-IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".svg")
 
 TABULAR_BYTE_LIMIT = 262144      # 256 KB
 STRUCTURED_BYTE_LIMIT = 1048576  # 1 MB
@@ -48,6 +50,8 @@ MAX_ZIP_ENTRIES = 200
 MAX_ZIP_MEMBER_BYTES = 10485760
 #: An image extracted from a ZIP is base64-inlined; keep the payload small.
 MAX_INNER_IMAGE_BYTES = 4194304
+#: A PDF extracted from a ZIP is base64-inlined too.
+MAX_INNER_PDF_BYTES = 8 * 1024 * 1024
 
 IMAGE_MIME_TYPES = {
     ".png": "image/png",
@@ -55,6 +59,34 @@ IMAGE_MIME_TYPES = {
     ".jpeg": "image/jpeg",
     ".webp": "image/webp",
     ".svg": "image/svg+xml",
+}
+
+#: Source code, configuration and documentation all share the text viewer.
+_TEXT_EXTENSIONS = (
+    ".txt", ".md", ".rst", ".tex", ".bib",
+    ".yml", ".yaml", ".toml", ".ini", ".cfg", ".conf", ".xml",
+    ".py", ".sh", ".bash", ".zsh", ".js", ".ts", ".jsx", ".tsx", ".vue",
+    ".c", ".cpp", ".h", ".hpp", ".rs", ".go", ".java",
+    ".r", ".jl", ".m", ".sql",
+    ".gitignore", ".env.example",
+)
+
+#: Single source of truth for previewable formats: normalized extension (or
+#: exact lower-case basename) -> ``(handler_kind, byte_limit)``.
+PREVIEW_REGISTRY: Dict[str, Tuple[str, int]] = {
+    ".csv": ("table", TABULAR_BYTE_LIMIT),
+    ".tsv": ("table", TABULAR_BYTE_LIMIT),
+    ".json": ("structured", STRUCTURED_BYTE_LIMIT),
+    ".geojson": ("structured", STRUCTURED_BYTE_LIMIT),
+    ".zip": ("zip", 0),
+    ".pdf": ("pdf", MAX_INNER_PDF_BYTES),
+    # Extensionless files every repository and code archive contains.
+    "makefile": ("text", TEXT_BYTE_LIMIT),
+    "dockerfile": ("text", TEXT_BYTE_LIMIT),
+    "license": ("text", TEXT_BYTE_LIMIT),
+    "readme": ("text", TEXT_BYTE_LIMIT),
+    **{ext: ("image", MAX_INNER_IMAGE_BYTES) for ext in IMAGE_MIME_TYPES},
+    **{ext: ("text", TEXT_BYTE_LIMIT) for ext in _TEXT_EXTENSIONS},
 }
 
 #: One Range read coalesces the whole ZIP central directory into a few calls.
@@ -77,6 +109,27 @@ HEAD_TIMEOUT = 6
 #: read budget is generous even though the transferred volume is capped.
 PREVIEW_TIMEOUT = 120
 
+#: Transient failures of a pooled keep-alive socket: the CDN closes it while
+#: idle (connect/read error) or hands out a socket that is already dead.
+#: ``raise_on_status=False`` keeps real HTTP errors visible to the callers
+#: instead of burning the retry budget on them.
+RETRY_POLICY = Retry(
+    total=2,
+    connect=2,
+    read=1,
+    backoff_factor=0.25,
+    allowed_methods=frozenset(["GET", "HEAD"]),
+    raise_on_status=False,
+)
+
+#: One pooled session for every preview fetch: successive clicks against the
+#: same repository reuse the established TLS connection instead of handshaking.
+HTTP_SESSION = requests.Session()
+HTTP_SESSION.mount(
+    "https://",
+    HTTPAdapter(pool_connections=4, pool_maxsize=8, max_retries=RETRY_POLICY),
+)
+
 GEOJSON_TYPES = frozenset(
     {
         "FeatureCollection",
@@ -96,6 +149,28 @@ UNSUPPORTED_BINARY_REASON = (
 )
 NO_RANGE_REASON = "Remote server does not support partial ZIP inspection"
 BAD_ZIP_REASON = "Cannot read the remote ZIP central directory"
+
+
+def resolve_preview_spec(filename: str) -> Tuple[str, int]:
+    """Return ``(handler_kind, byte_limit)`` for one filename or member path.
+
+    Exact base names win over extensions, so ``Makefile``, ``LICENSE`` or
+    ``README`` are recognised without one, while ``README.md`` still resolves
+    through ``.md``. Unknown formats answer ``("unsupported", 0)``.
+    """
+    text = str(filename or "").strip().replace("\\", "/")
+    if not text:
+        return ("unsupported", 0)
+    basename = text.rsplit("/", 1)[-1].casefold()
+    spec = PREVIEW_REGISTRY.get(basename)
+    if spec is not None:
+        return spec
+    return PREVIEW_REGISTRY.get(file_extension(basename), ("unsupported", 0))
+
+
+def supported_preview_extensions() -> List[str]:
+    """Every registry key, so the UI never hardcodes the previewable formats."""
+    return sorted(PREVIEW_REGISTRY)
 
 
 class PreviewError(Exception):
@@ -172,7 +247,7 @@ def fetch_record_file_summary(record: Dict[str, Any]) -> Dict[str, Any]:
 
     url = ZENODO_RECORD_URL.format(recid=recid)
     try:
-        response = requests.get(
+        response = _session_get(
             url,
             headers=dict(REQUEST_HEADERS),
             timeout=(PROBE_TIMEOUT, PREVIEW_TIMEOUT),
@@ -212,6 +287,23 @@ def _file_headers(extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
     return headers
 
 
+def _session_get(url: str, **kwargs: Any) -> requests.Response:
+    """GET through the pooled session, replacing a stale keep-alive socket once.
+
+    Zenodo's CDN closes idle keep-alive connections, and ``_fetch_bytes`` closes
+    partial ``stream=True`` responses as soon as its byte budget is met, so the
+    next call can pull a dead socket out of ``HTTPAdapter``. Dropping the pool
+    and retrying once turns that transient ``RemoteDisconnected`` into a normal
+    response instead of an HTTP 502.
+    """
+    try:
+        return HTTP_SESSION.get(url, **kwargs)
+    except requests.ConnectionError:
+        logger.info("Retrying %s after a stale keep-alive connection", url)
+        HTTP_SESSION.close()
+        return HTTP_SESSION.get(url, **kwargs)
+
+
 def _fetch_bytes(url: str, limit: int) -> Tuple[bytes, bool]:
     """Read at most ``limit`` bytes and report whether more data exists.
 
@@ -220,7 +312,7 @@ def _fetch_bytes(url: str, limit: int) -> Tuple[bytes, bool]:
     cannot push more than one extra chunk into memory.
     """
     try:
-        response = requests.get(
+        response = _session_get(
             url,
             headers=_file_headers({"Range": f"bytes=0-{limit}"}),
             stream=True,
@@ -230,7 +322,7 @@ def _fetch_bytes(url: str, limit: int) -> Tuple[bytes, bool]:
         if response.status_code == 416:
             # A server that rejects an over-long range still serves the file.
             response.close()
-            response = requests.get(
+            response = _session_get(
                 url,
                 headers=_file_headers(),
                 stream=True,
@@ -327,22 +419,24 @@ def _parse_text_bytes(raw: bytes, truncated: bool) -> Dict[str, Any]:
     return {"kind": "text", "truncated": truncated, "content": _decode(raw)}
 
 
-def _preview_table(url: str, ext: str) -> Dict[str, Any]:
-    """First 256 KB of a CSV/TSV as a header row plus at most 100 rows."""
-    raw, truncated = _fetch_bytes(url, TABULAR_BYTE_LIMIT)
-    return _parse_table_bytes(raw, truncated, ext)
-
-
-def _preview_structured(url: str) -> Dict[str, Any]:
-    """Up to 1 MB of JSON: GeoJSON is handed over raw, anything else pretty."""
-    raw, truncated = _fetch_bytes(url, STRUCTURED_BYTE_LIMIT)
-    return _parse_structured_bytes(raw, truncated)
-
-
-def _preview_text(url: str) -> Dict[str, Any]:
-    """First 256 KB of a text, Markdown or YAML file."""
-    raw, truncated = _fetch_bytes(url, TEXT_BYTE_LIMIT)
+def _render_bytes(
+    kind: str, raw: bytes, truncated: bool, filename: str
+) -> Dict[str, Any]:
+    """Render an already bounded buffer through the registry handler."""
+    if kind == "table":
+        return _parse_table_bytes(raw, truncated, file_extension(filename))
+    if kind == "structured":
+        return _parse_structured_bytes(raw, truncated)
     return _parse_text_bytes(raw, truncated)
+
+
+def _preview_bytes(
+    url: str, kind: str, limit: int, filename: str
+) -> Dict[str, Any]:
+    """Fetch one direct file under its registry byte budget and render it."""
+    raw, truncated = _fetch_bytes(url, limit)
+    return _render_bytes(kind, raw, truncated, filename)
+
 
 
 class _HttpRangeFile(io.RawIOBase):
@@ -354,11 +448,10 @@ class _HttpRangeFile(io.RawIOBase):
     requests, so a multi-gigabyte archive is never downloaded.
     """
 
-    def __init__(self, url: str, size: int, session: requests.Session) -> None:
+    def __init__(self, url: str, size: int) -> None:
         super().__init__()
         self._url = url
         self._size = int(size)
-        self._session = session
         self._pos = 0
         self._buffer = b""
         self._buffer_start = 0
@@ -421,7 +514,7 @@ class _HttpRangeFile(io.RawIOBase):
     def _read_range(self, start: int, end: int) -> bytes:
         headers = _file_headers({"Range": f"bytes={start}-{end}"})
         try:
-            response = self._session.get(
+            response = _session_get(
                 self._url,
                 headers=headers,
                 stream=True,
@@ -464,10 +557,10 @@ class _HttpRangeFile(io.RawIOBase):
 _RANGE_TOTAL_RE = re.compile(r"bytes\s+\d+-\d+/(\d+)", re.IGNORECASE)
 
 
-def _remote_zip_size(url: str, session: requests.Session) -> Optional[int]:
+def _remote_zip_size(url: str) -> Optional[int]:
     """Return the remote size when Range requests are honoured, else ``None``."""
     try:
-        head = session.head(
+        head = HTTP_SESSION.head(
             url,
             headers=_file_headers(),
             allow_redirects=True,
@@ -483,7 +576,7 @@ def _remote_zip_size(url: str, session: requests.Session) -> Optional[int]:
     # Zenodo's CDN omits ``Accept-Ranges`` on HEAD and answers it slowly, so a
     # one-byte Range GET is the authoritative (and fast) capability probe.
     try:
-        probe = session.get(
+        probe = _session_get(
             url,
             headers=_file_headers({"Range": "bytes=0-0"}),
             stream=True,
@@ -502,17 +595,15 @@ def _remote_zip_size(url: str, session: requests.Session) -> Optional[int]:
 
 def _preview_zip(url: str) -> Dict[str, Any]:
     """List up to 200 entries of a remote ZIP, reading only its directory."""
-    with requests.Session() as session:
-        session.headers.update(_file_headers())
-        size = _remote_zip_size(url, session)
-        if not size:
-            return {"kind": "unsupported", "reason": NO_RANGE_REASON}
-        try:
-            with zipfile.ZipFile(_HttpRangeFile(url, size, session)) as archive:
-                infos = archive.infolist()
-        except (zipfile.BadZipFile, OSError, RuntimeError) as exc:
-            logger.info("ZIP preview failed for %s: %s", url, exc)
-            return {"kind": "unsupported", "reason": BAD_ZIP_REASON}
+    size = _remote_zip_size(url)
+    if not size:
+        return {"kind": "unsupported", "reason": NO_RANGE_REASON}
+    try:
+        with zipfile.ZipFile(_HttpRangeFile(url, size)) as archive:
+            infos = archive.infolist()
+    except (zipfile.BadZipFile, OSError, RuntimeError) as exc:
+        logger.info("ZIP preview failed for %s: %s", url, exc)
+        return {"kind": "unsupported", "reason": BAD_ZIP_REASON}
 
     entries = [
         {
@@ -526,95 +617,88 @@ def _preview_zip(url: str) -> Dict[str, Any]:
     return {"kind": "zip", "entry_count": len(infos), "entries": entries}
 
 
-def _preview_image(url: str) -> Dict[str, Any]:
-    """Images are hot-linked from the repository, never proxied."""
-    return {"kind": "image", "image_url": url}
-
-
 def _preview_zip_member(url: str, inner: str) -> Dict[str, Any]:
     """Render one file stored inside a remote ZIP, reading only that member.
 
     The central directory is reached through ``_HttpRangeFile``; only the member's
-    own compressed bytes travel over the wire, under the same per-format budgets
-    as a direct download. Unsupported extensions never open the archive.
+    own compressed bytes travel over the wire, under the same registry budgets as
+    a direct download. Unsupported extensions never open the archive.
     """
-    ext = file_extension(inner)
     if inner.endswith("/"):
         raise PreviewError("Archive entry not found or is a directory.", 404)
-    if ext in TABULAR_EXTENSIONS:
-        limit = TABULAR_BYTE_LIMIT
-    elif ext in STRUCTURED_EXTENSIONS:
-        limit = STRUCTURED_BYTE_LIMIT
-    elif ext in TEXT_EXTENSIONS:
-        limit = TEXT_BYTE_LIMIT
-    elif ext in IMAGE_EXTENSIONS:
-        limit = MAX_INNER_IMAGE_BYTES
-    else:
+    kind, limit = resolve_preview_spec(inner)
+    if kind in ("unsupported", "zip"):
         return {
             "kind": "unsupported",
             "reason": UNSUPPORTED_BINARY_REASON,
             "inner_path": inner,
         }
 
-    with requests.Session() as session:
-        session.headers.update(_file_headers())
-        size = _remote_zip_size(url, session)
-        if not size:
-            return {
-                "kind": "unsupported",
-                "reason": NO_RANGE_REASON,
-                "inner_path": inner,
-            }
-        try:
-            with zipfile.ZipFile(_HttpRangeFile(url, size, session)) as archive:
-                info = archive.getinfo(inner)
-                if info.is_dir():
-                    raise PreviewError(
-                        "Archive entry not found or is a directory.", 404
-                    )
-                if (
-                    info.file_size > MAX_ZIP_MEMBER_BYTES
-                    or info.compress_size > MAX_ZIP_BYTES
-                ):
-                    raise PreviewError(
-                        "File inside archive is too large to preview in the browser.",
-                        413,
-                    )
-                with archive.open(info) as handle:
-                    raw = handle.read(limit + 1)
-        except KeyError as exc:
-            raise PreviewError(
-                "Archive entry not found or is a directory.", 404
-            ) from exc
-        except (zipfile.BadZipFile, OSError, RuntimeError) as exc:
-            logger.info("ZIP member preview failed for %s (%s): %s", url, inner, exc)
-            return {
-                "kind": "unsupported",
-                "reason": BAD_ZIP_REASON,
-                "inner_path": inner,
-            }
+    size = _remote_zip_size(url)
+    if not size:
+        return {
+            "kind": "unsupported",
+            "reason": NO_RANGE_REASON,
+            "inner_path": inner,
+        }
+    try:
+        with zipfile.ZipFile(_HttpRangeFile(url, size)) as archive:
+            info = archive.getinfo(inner)
+            if info.is_dir():
+                raise PreviewError(
+                    "Archive entry not found or is a directory.", 404
+                )
+            if (
+                info.file_size > MAX_ZIP_MEMBER_BYTES
+                or info.compress_size > MAX_ZIP_BYTES
+            ):
+                raise PreviewError(
+                    "File inside archive is too large to preview in the browser.",
+                    413,
+                )
+            with archive.open(info) as handle:
+                raw = handle.read(limit + 1)
+    except KeyError as exc:
+        raise PreviewError(
+            "Archive entry not found or is a directory.", 404
+        ) from exc
+    except (zipfile.BadZipFile, OSError, RuntimeError) as exc:
+        logger.info("ZIP member preview failed for %s (%s): %s", url, inner, exc)
+        return {
+            "kind": "unsupported",
+            "reason": BAD_ZIP_REASON,
+            "inner_path": inner,
+        }
 
     truncated = len(raw) > limit
     raw = raw[:limit]
-    if ext in TABULAR_EXTENSIONS:
-        payload = _parse_table_bytes(raw, truncated, ext)
-    elif ext in STRUCTURED_EXTENSIONS:
-        payload = _parse_structured_bytes(raw, truncated)
-    elif ext in TEXT_EXTENSIONS:
-        payload = _parse_text_bytes(raw, truncated)
-    else:
+    if kind == "image":
         if truncated:
             return {
                 "kind": "unsupported",
                 "reason": "Image inside archive is too large to preview.",
                 "inner_path": inner,
             }
-        mime = IMAGE_MIME_TYPES.get(ext, "application/octet-stream")
-        payload = {
+        mime = IMAGE_MIME_TYPES.get(file_extension(inner), "application/octet-stream")
+        payload: Dict[str, Any] = {
             "kind": "image",
             "image_url": f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}",
             "from_zip": True,
         }
+    elif kind == "pdf":
+        if truncated:
+            return {
+                "kind": "unsupported",
+                "reason": "PDF inside archive is too large to preview.",
+                "inner_path": inner,
+            }
+        payload = {
+            "kind": "pdf",
+            "pdf_base64": base64.b64encode(raw).decode("ascii"),
+            "from_zip": True,
+        }
+    else:
+        payload = _render_bytes(kind, raw, truncated, inner)
     payload["inner_path"] = inner
     return payload
 
@@ -623,7 +707,7 @@ def _preview_zip_member(url: str, inner: str) -> Dict[str, Any]:
 # Public entry point
 # ---------------------------------------------------------------------------
 def build_preview(url: Any, name: Any = "", inner: Any = "") -> Dict[str, Any]:
-    """Classify one remote file by extension and return its bounded preview.
+    """Classify one remote file through ``PREVIEW_REGISTRY`` and preview it.
 
     ``inner`` names a file stored inside a ``.zip`` archive: the archive URL is
     the one validated against the allow-list, and only that member is read.
@@ -635,19 +719,18 @@ def build_preview(url: Any, name: Any = "", inner: Any = "") -> Dict[str, Any]:
         logger.debug("Preview member %s of %s", inner_path, filename)
         return _preview_zip_member(target, inner_path)
 
-    ext = file_extension(filename)
-    logger.debug("Preview %s (%s)", filename, ext or "no extension")
+    kind, limit = resolve_preview_spec(filename)
+    logger.debug("Preview %s (%s)", filename, kind)
 
-    if ext in TABULAR_EXTENSIONS:
-        return _preview_table(target, ext)
-    if ext in STRUCTURED_EXTENSIONS:
-        return _preview_structured(target)
-    if ext in TEXT_EXTENSIONS:
-        return _preview_text(target)
-    if ext == ".zip":
+    if kind in ("table", "structured", "text"):
+        return _preview_bytes(target, kind, limit, filename)
+    if kind == "zip":
         return _preview_zip(target)
-    if ext in IMAGE_EXTENSIONS:
-        return _preview_image(target)
+    if kind == "image":
+        return {"kind": "image", "image_url": target}
+    if kind == "pdf":
+        return {"kind": "pdf", "pdf_url": target}
     return {"kind": "unsupported", "reason": UNSUPPORTED_BINARY_REASON}
+
 
 

@@ -31,7 +31,9 @@ var state = {
   runs: [],
   logsCursor: 0,
   busy: false,
-  generatedAt: null
+  generatedAt: null,
+  /* Previewable extensions/basenames delivered by /api/data (backend registry). */
+  previewExtensions: []
 };
 
 var els = {};
@@ -224,8 +226,7 @@ function init() {
   appendConsoleEmpty();
 
   loadData();
-  pollLogs();
-  window.setInterval(pollLogs, 1500);
+  pollLogsNow();
 }
 
 function bindEvents() {
@@ -312,6 +313,13 @@ function bindEvents() {
   els.clearConsole.addEventListener("click", function () {
     els.consoleLog.innerHTML = "";
     appendConsoleEmpty();
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) {
+      pollLogsNow();
+    } else {
+      scheduleLogPoll();
+    }
   });
 }
 
@@ -436,6 +444,9 @@ function applyPayload(payload) {
   if (Array.isArray(payload.runs) && payload.runs.length) {
     state.runs = payload.runs;
   }
+  if (Array.isArray(payload.preview_extensions)) {
+    state.previewExtensions = payload.preview_extensions;
+  }
   state.generatedAt = payload.generated_at || new Date().toISOString();
 
   if (!findFilter(state.activeFilter)) {
@@ -475,6 +486,7 @@ async function runHarvest() {
   }
   setBusy(true);
   setStatus("Harvesting live APIs...", "busy");
+  pollLogsNow();
 
   var params = new URLSearchParams();
   params.set("type", state.activeFilter);
@@ -505,6 +517,7 @@ async function runHarvest() {
     appendLogLine("ERROR", "Harvest failed: " + error.message);
   } finally {
     setBusy(false);
+    pollLogsNow();
   }
 }
 
@@ -558,6 +571,34 @@ function appendLogLines(entries) {
   if (nearBottom) {
     log.scrollTop = log.scrollHeight;
   }
+}
+
+/* -------------------------------------------------- adaptive log polling */
+/* Fast polling only matters while a harvest runs; an idle dashboard refreshes
+   slowly, and a background tab does not poll at all until it is visible again. */
+var LOG_POLL_BUSY_MS = 1500;
+var LOG_POLL_IDLE_MS = 10000;
+var logPollTimer = null;
+
+function scheduleLogPoll() {
+  if (logPollTimer) {
+    window.clearTimeout(logPollTimer);
+    logPollTimer = null;
+  }
+  if (document.hidden) {
+    return;
+  }
+  logPollTimer = window.setTimeout(async function () {
+    logPollTimer = null;
+    await pollLogs();
+    scheduleLogPoll();
+  }, state.busy ? LOG_POLL_BUSY_MS : LOG_POLL_IDLE_MS);
+}
+
+/** Immediate refresh (harvest start/finish, tab focus) plus a fresh timer. */
+function pollLogsNow() {
+  pollLogs();
+  scheduleLogPoll();
 }
 
 async function pollLogs() {

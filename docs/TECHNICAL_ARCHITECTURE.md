@@ -55,7 +55,7 @@ Browser                     backend/server.py            backend/harvester.py   
    |<------------------------------| {run, counts, sources, items}|                        |
    |  render cards + metrics       |                              |                        |
    |                               |                              |                        |
-   |  GET /api/logs?since=N  (1.5 s poll)                        |                        |
+   |  GET /api/logs?since=N  (1.5 s busy / 10 s idle poll)       |                        |
    |------------------------------>| log_snapshot(N) -- ring buffer of the log handler     |
    |<------------------------------| {cursor, entries[]}          |                        |
 ```
@@ -117,7 +117,7 @@ EPFL-red accent), a toolbar (file `<select>`, size badge, "Download original" li
 a scrollable body. `Escape`, the close button and a backdrop click close it, and
 `document.body.preview-open` freezes the page behind. Renderers are chosen from the
 `kind` returned by `/api/preview` (`table`, `geojson`, `zip`, `json`, `text`, `image`,
-`unsupported`); see §8.
+`pdf`, `unsupported`); see §8.
 
 | Sidebar panel | Contents |
 |---|---|
@@ -125,7 +125,7 @@ a scrollable body. `Escape`, the close button and a backdrop click close it, and
 | Search | Free-text box matching title, abstract, authors, lab acronym, PI, keywords, file size and file extensions (`_search` haystack built per record). Four refinement toggles: ENAC Units Only, Has Code Repository, Grant Funded, New / Updated Only. |
 | Actions | **Run Scraper (Live API)**, CSV export, JSON export. |
 | Hub Metrics | Records in view, distinct labs/units, new and updated counts of the last run, plus a one-line run summary. |
-| Scraper Live Console | Ring buffer of scraper log lines streamed by `/api/logs?since=cursor` (1.5 s polling, 400-line DOM cap, auto-scroll only when already at the bottom). |
+| Scraper Live Console | Ring buffer of scraper log lines streamed by `/api/logs?since=cursor` (adaptive polling: 1.5 s while a harvest runs, 10 s when idle, paused while the tab is hidden; 400-line DOM cap, auto-scroll only when already at the bottom). |
 
 The results column holds a summary bar (`N records`, active window, per-source counts,
 snapshot time), the resource-type filter pills with live counts, and the card list.
@@ -582,6 +582,14 @@ url>&name=<filename>&inner=<optional path inside a ZIP>` as a **read-only, bound
 pipeline; `backend/server.py` maps its `PreviewError` to the HTTP status it carries and
 everything else to a JSON body.
 
+`PREVIEW_REGISTRY` is the single declarative table behind that pipeline: one
+`extension or exact basename -> (handler_kind, byte_limit)` mapping that drives
+`resolve_preview_spec()` for direct files **and** for ZIP members, and that
+`supported_preview_extensions()` publishes through `/api/data` and `/api/filters`
+(as `preview_extensions`). Adding a format is one dictionary entry, plus one renderer
+branch when it needs a new `kind`; the frontend never hardcodes an extension list, so
+`isPreviewableInner()` and the overlay follow the backend automatically.
+
 A second endpoint, `GET /api/record-files?id=<canonical_id>`, rebuilds the file
 inventory of a record whose stored `file_summary` predates the preview `entries`
 (see §8.2), so the overlay never depends on the harvest window.
@@ -638,9 +646,11 @@ reload finds the inventory in SQLite.
 |---|---|---|
 | `.csv`, `.tsv` | Range GET for the first 262 144 bytes, incomplete trailing line dropped, UTF-8 then latin-1, `csv.Sniffer` on the first 8 KB (delimiters `, ; \t \|`), header + at most 100 rows | `{"kind": "table", "truncated", "columns", "rows", "row_count_shown"}` |
 | `.geojson`, `.json` | Up to 1 048 576 bytes; JSON parsed; GeoJSON detected via `type` in `FeatureCollection`, `Feature`, `GeometryCollection`, `Point`, `MultiPoint`, `LineString`, `MultiLineString`, `Polygon`, `MultiPolygon` | `{"kind": "geojson", "geojson"}` or `{"kind": "json", "content"}` (pretty-printed); unparsable/truncated JSON degrades to `text` |
+| `.pdf` | A direct URL is never proxied: the validated link is returned and the overlay embeds it in an `<iframe>`. A PDF inside a ZIP cannot be hot-linked, so it is extracted under the member budgets (capped at 8 MB by `MAX_INNER_PDF_BYTES`) and inlined | `{"kind": "pdf", "pdf_url"}` directly, or `{"kind": "pdf", "pdf_base64", "from_zip": true, "inner_path"}` from a ZIP |
+| Source code and configuration: `.py`, `.js`, `.ts`, `.jsx`, `.tsx`, `.vue`, `.c`, `.cpp`, `.h`, `.hpp`, `.rs`, `.go`, `.java`, `.r`, `.jl`, `.m`, `.sql`, `.sh`, `.bash`, `.zsh`, `.toml`, `.ini`, `.cfg`, `.conf`, `.xml`, `.rst`, `.tex`, `.bib`, `.gitignore`, `.env.example`, plus the exact basenames `Makefile`, `Dockerfile`, `LICENSE` and `README` | Same 256 KB text reader as `.txt` and same `TEXT_BYTE_LIMIT`; exact basenames are matched first, so `README.md` still resolves through its extension | `{"kind": "text", "truncated", "content"}` |
 | `.txt`, `.md`, `.yml`, `.yaml` | Up to 262 144 bytes, UTF-8/latin-1 | `{"kind": "text", "truncated", "content"}` |
 | `.zip` | Central directory through HTTP Range requests, at most 200 listed entries | `{"kind": "zip", "entry_count", "entries": [{name, size, size_human, ext}]}` |
-| `.zip` + `inner=<member>` | Central directory located as below, then **only that member's compressed bytes** are fetched; member budget 10 MB uncompressed / 12 MB compressed, images 4 MB | same payload as the matching direct format, plus `"inner_path"`; an extracted image becomes `{"kind": "image", "image_url": "data:<mime>;base64,…", "from_zip": true}` |
+| `.zip` + `inner=<member>` | Central directory located as below, then **only that member's compressed bytes** are fetched; member budget 10 MB uncompressed / 12 MB compressed, images 4 MB, PDFs 8 MB | same payload as the matching direct format, plus `"inner_path"`; an extracted image becomes `{"kind": "image", "image_url": "data:<mime>;base64,…", "from_zip": true}` |
 | `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg` | No proxy at all: the validated URL is returned for hot-linking | `{"kind": "image", "image_url"}` |
 | anything else (`.nc`, `.zarr`, `.gpkg`, `.parquet`, `.h5`, …) | no fetch | `{"kind": "unsupported", "reason": "Binary scientific format — download record to inspect in Python/QGIS"}` |
 
@@ -652,6 +662,14 @@ capped by `iter_content`, and a `416` (range past EOF) is retried without Range.
 Direct downloads and ZIP members share the same byte parsers
 (`_parse_table_bytes()`, `_parse_structured_bytes()`, `_parse_text_bytes()`), so a CSV
 renders identically whether it sits behind a URL or inside an archive.
+
+Every preview request goes through one module-level `HTTP_SESSION` (pool 4/8) whose
+adapter carries `urllib3`'s `Retry(total=2, connect=2, read=1, backoff_factor=0.25)`
+limited to `GET`/`HEAD` with `raise_on_status=False`, so real HTTP errors still reach
+the callers. All GETs also use `_session_get()`, which catches the
+`ConnectionError`/`RemoteDisconnected` raised when a keep-alive socket was closed while
+idle (or after `_fetch_bytes()` closes a partial response early), clears the pool with
+`HTTP_SESSION.close()` and retries once — the transient failure never becomes HTTP 502.
 
 ### 8.4 Remote ZIP inspection without downloading the archive
 
@@ -678,8 +696,8 @@ renders identically whether it sits behind a URL or inside an archive.
   `{"kind": "unsupported", "reason": "Remote server does not support partial ZIP inspection"}`.
 
 `_preview_zip_member(url, inner)` reuses that wrapper to render one member. It first
-classifies `inner` by extension — an unsupported extension answers **without touching
-the network** — then resolves the central directory and calls
+classifies `inner` through `resolve_preview_spec()` — an unsupported extension answers
+**without touching the network** — then resolves the central directory and calls
 `archive.getinfo(inner)`:
 
 * a missing name or a directory entry raises `PreviewError(..., 404)`;
@@ -689,7 +707,10 @@ the network** — then resolves the central directory and calls
   through the same Range buffer (a member's local header plus its data is one or two
   extra requests) and the shared byte parser renders it;
 * an image is inlined as `data:<mime>;base64,…` only when it fits in 4 MB; a larger one
-  degrades to a "too large" notice rather than a truncated (corrupt) image.
+  degrades to a "too large" notice rather than a truncated (corrupt) image;
+* a PDF is returned as `pdf_base64` when it fits in 8 MB (`MAX_INNER_PDF_BYTES`), so the
+  overlay can build a Blob URL; a larger one gets the same "too large" notice instead of
+  a truncated file.
 
 ### 8.5 Frontend renderers and session cache
 
@@ -717,7 +738,7 @@ read from `payload.inner_path`, so the breadcrumb always matches the rendered fi
   listing up to 12 feature properties (all HTML-escaped). If the CDN is unreachable,
   the map is hidden and the formatted GeoJSON is revealed instead.
 * **zip** — internal paths, extension badges, uncompressed sizes and a **Preview** pill
-  on CSV/TSV/JSON/GeoJSON/text/Markdown/YAML/image members. Previewable rows carry
+  on CSV/TSV/JSON/GeoJSON/text/Markdown/YAML/image/PDF/source-code members. Previewable rows carry
   `data-zip-inner`; one delegated click on `#preview-body` calls
   `loadPreviewFile(index, inner)`, which requests
   `/api/preview?url=…&name=…&inner=…`, and `renderPreviewPayload()` prepends the sticky
@@ -732,6 +753,11 @@ read from `payload.inner_path`, so the breadcrumb always matches the rendered fi
 * **image** — a centered, responsive `<img>` (max-height 58 vh); `previewImageUrl()`
   accepts both allow-listed `https://` URLs and the `data:image/…;base64,` payloads
   produced for ZIP members.
+* **pdf** — a direct PDF is embedded in `<iframe class="preview-pdf">`, letting the
+  native viewer stream and paginate it; a PDF extracted from a ZIP is decoded by
+  `previewBase64Bytes()` into a Blob object URL first. `releasePreviewPdf()` revokes that
+  URL when another file is loaded and in `closePreview()`, so repeated previews cannot
+  leak Blob references.
 * **unsupported** — reason, file metadata and a direct download button.
 
 `openPreview(item)` drives the selector: `previewEntries(item)` collects the cached
@@ -761,18 +787,38 @@ the `preview-open` scroll lock.
 |---|---|---|
 | `backend/config.py` | Paths, verified API constants, `RESOURCE_FILTERS` taxonomy | Add a filter (e.g. `publication`) by adding a key with `zenodo_query`, `infoscience_query`, `classes`, `label`, `pill`, `description` |
 | `backend/models.py` | `HarvestRecord`, `clean_text()`, `split_keywords()`, type classification, file summaries (counts + first 25 `entries` with download URLs) | Add a field: extend the dataclass, `to_dict()`, `record_from_row()` and `storage.COLUMNS` |
-| `backend/preview.py` | SSRF allow-list, bounded Range fetches per format, shared byte parsers, table/JSON/GeoJSON/text/ZIP/image payloads, ZIP-member extraction (`inner=`), on-demand Zenodo file inventory | Add a renderer: a `_parse_<format>_bytes()` parser, a `_preview_<ext>()` fetcher and a branch in `build_preview()`; a new trusted host goes in `ALLOWED_HOSTS` |
+| `backend/preview.py` | SSRF allow-list, the `PREVIEW_REGISTRY` format table, bounded Range fetches per format, shared byte parsers, table/JSON/GeoJSON/text/ZIP/image/PDF payloads, ZIP-member extraction (`inner=`), on-demand Zenodo file inventory | Add a format: one `PREVIEW_REGISTRY` entry, plus a `_parse_<format>_bytes()` parser and a dispatch branch when it needs a new `kind`; a new trusted host goes in `ALLOWED_HOSTS` |
 | `backend/scrapers/zenodo.py` | Lucene query build, creator/grant/license extraction, keyword splitting, pacing | Add a metadata extractor (e.g. `metadata.dates`) |
 | `backend/scrapers/infoscience.py` | Solr query build, DSpace metadata extraction, WAF replay | Add a CRIS field (`cris.virtual.*`) to the record mapping |
 | `backend/harvester.py` | Window resolution, parallel fetch, DOI merge, run bookkeeping | Change merge precedence in `_merge_pair()` |
 | `backend/storage.py` | SQLite schema, delta detection, JSON mirror, on-demand `file_summary` caching | Add a tracked field to `TRACKED_FIELDS` to make it delta-sensitive |
 | `backend/logger.py` | Ring-buffer log handler + cursor snapshots | Change `LOG_BUFFER_SIZE` for a longer console history |
 | `backend/server.py` | Static serving + JSON API | Add a new `/api/*` route in `_handle_api()` |
-| `frontend/preview.js` | The whole preview overlay: `previewState`, on-demand file inventory, session cache (`MAX_PREVIEW_CACHE`), table + row filter, inline SVG quick chart, clickable ZIP members with breadcrumb, Markdown renderer, image/unsupported/GeoJSON renderers and the lazy Leaflet loader | Add a ZIP member type to `PREVIEW_INNER_EXTENSIONS`; a new view in `renderPreviewPayload()`; a new toggle reuses the delegated `[data-*]` click handler in `initPreview()` |
-| `frontend/app.js` | Rendering, filtering, exports, polling, and the single-control collapsible contract (`collapsiblePill()`, `renderCollapsibleText()` for prose, `renderCollapsibleItems()` for lists, behind one `[data-collapsible-toggle]` handler) | Field renderers are centralized in `metaList()`, `renderAuthors()`, `renderHeaderBadges()`, `renderFunding()` and `renderKeywords()`; the label vocabulary in `SOURCE_LABELS` and `FALLBACK_FILTERS`; preview entry points in `frontend/preview.js` |
+| `frontend/preview.js` | The whole preview overlay: `previewState`, on-demand file inventory, session cache (`MAX_PREVIEW_CACHE`), table + row filter, inline SVG quick chart, clickable ZIP members with breadcrumb, Markdown renderer, image/PDF/unsupported/GeoJSON renderers and the lazy Leaflet loader | Member previewability comes from `state.previewExtensions` (the backend registry), so new member types need no change here; a new view goes in `renderPreviewPayload()`, and a new toggle reuses the delegated `[data-*]` click handler in `initPreview()` |
+| `frontend/app.js` | Rendering, filtering, exports, adaptive log polling (`scheduleLogPoll()`), and the single-control collapsible contract (`collapsiblePill()`, `renderCollapsibleText()` for prose, `renderCollapsibleItems()` for lists, behind one `[data-collapsible-toggle]` handler) | Field renderers are centralized in `metaList()`, `renderAuthors()`, `renderHeaderBadges()`, `renderFunding()` and `renderKeywords()`; the label vocabulary in `SOURCE_LABELS` and `FALLBACK_FILTERS`; preview entry points in `frontend/preview.js` |
 
 **Design rules kept throughout:** no third-party Python package beyond `requests`; no
 JavaScript build step or framework; no credentials or environment-specific values; every
 displayed value traceable to an upstream record; failures degrade to a partial, clearly
 labelled result rather than a silent empty page.
+
+---
+
+## 10. Regression suite
+
+`tests/` is a plain `unittest` suite with no network access and no extra dependency:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+| Module | Coverage |
+|---|---|
+| `test_models_and_storage.py` | `HarvestRecord` helpers and file summaries; delta detection across `new` / `updated` / `unchanged`; superset merge that must survive a later partial harvest; `update_file_summary()` mirroring; `MAX_RUNS_PER_SCOPE` retention |
+| `test_preview_and_api.py` | SSRF allow-list, `resolve_preview_spec()` matrix, `supported_preview_extensions()`, the shared table/structured parsers, in-memory ZIP central directory and member extraction (CSV, code, PDF, PNG, 404/413 cases), direct PDF/image dispatch, and a real `create_server(port=0)` instance serving `/api/data`, `/api/filters`, `/api/logs`, `/api/status`, `/api/preview` and `/api/record-files` |
+| `test_e2e_playwright.py` | Optional Chromium walkthrough (cards, search, keyword badge, preview modal, `Escape`), skipped with `unittest.skipUnless` when `playwright` is not installed |
+
+The ZIP cases patch `_remote_zip_size()` and `_HttpRangeFile` with a buffered archive, so
+the remote-inspection code runs unmodified without contacting Zenodo; the API cases patch
+`storage._default_storage` with a temporary SQLite database.
 

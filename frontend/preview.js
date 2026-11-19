@@ -3,22 +3,25 @@
 
    One record, one active file at a time. This module owns the overlay state,
    the on-demand file inventory, the renderers (table, chart, ZIP listing with
-   clickable members, Markdown, GeoJSON map) and the in-session payload cache.
-   It is loaded before app.js, so it only calls the global helpers that file
-   defines (escapeHtml, asArray, safeUrl, state) at runtime, never at parse time.
-   No build step, no framework, no external chart or Markdown library.
+   clickable members, Markdown, PDF, GeoJSON map) and the in-session payload
+   cache. It is loaded before app.js, so it only calls the global helpers that
+   file defines (escapeHtml, asArray, safeUrl, state) at runtime, never at parse
+   time. No build step, no framework, no external chart or Markdown library.
    ========================================================================== */
 "use strict";
 
 /* Payloads are cached per URL + inner path for the whole browser session, so
    closing the modal, switching files or leaving a ZIP member is instantaneous. */
 var MAX_PREVIEW_CACHE = 40;
-/* Files inside a ZIP that can be rendered without downloading the archive. */
-var PREVIEW_INNER_EXTENSIONS = [
-  ".csv", ".tsv", ".json", ".geojson", ".txt", ".md", ".yml", ".yaml",
+var PREVIEW_CHART_MAX_POINTS = 100;
+/* Core formats used only until /api/data delivers the backend registry. */
+var FALLBACK_PREVIEW_EXTENSIONS = [
+  ".csv", ".tsv", ".json", ".geojson", ".txt", ".md", ".rst", ".yml", ".yaml",
+  ".toml", ".py", ".sh", ".js", ".ts", ".pdf", ".zip",
   ".png", ".jpg", ".jpeg", ".webp", ".svg"
 ];
-var PREVIEW_CHART_MAX_POINTS = 100;
+/* A PDF extracted from a ZIP is shown through a Blob URL that must be revoked. */
+var previewObjectUrl = null;
 
 var previewState = {
   item: null,
@@ -180,6 +183,10 @@ async function openPreview(item) {
   if (!item || !previewEls.modal) {
     return;
   }
+  /* Never inherit the view toggle or payload of a previously opened record. */
+  previewState.view = "";
+  previewState.payload = null;
+  previewState.entry = null;
   var entries = previewEntries(item);
   previewState.item = item;
   previewState.entries = entries;
@@ -244,6 +251,7 @@ function closePreview() {
   previewState.item = null;
   previewState.entries = [];
   destroyPreviewMap();
+  releasePreviewPdf();
   previewEls.modal.hidden = true;
   previewEls.body.innerHTML = "";
   document.body.classList.remove("preview-open");
@@ -290,6 +298,7 @@ async function loadPreviewFile(index, innerPath) {
   previewState.chartX = null;
   previewState.chartY = null;
   destroyPreviewMap();
+  releasePreviewPdf();
 
   previewEls.file.value = String(index);
   previewEls.size.textContent = inner ? "" : (entry.size_human || "");
@@ -364,6 +373,8 @@ function renderPreviewPayload(payload, entry) {
     html = renderPreviewZip(payload);
   } else if (kind === "json" || kind === "text") {
     html = renderPreviewCode(payload, entry);
+  } else if (kind === "pdf") {
+    html = renderPreviewPdf(payload, entry);
   } else if (kind === "image") {
     html = renderPreviewImage(payload, entry);
   } else {
@@ -671,12 +682,24 @@ function previewExtension(name) {
   return ext.length <= 16 ? ext : "";
 }
 
+/** Previewable tokens come from /api/data (`preview_extensions`), so the backend
+    registry stays the single source of truth; the small fallback list only
+    covers the first paint, before that payload has arrived. */
 function isPreviewableInner(name) {
   var text = String(name || "");
   if (!text || text.slice(-1) === "/") {
     return false;
   }
-  return PREVIEW_INNER_EXTENSIONS.indexOf(previewExtension(text)) !== -1;
+  var tokens = asArray(state.previewExtensions);
+  if (!tokens.length) {
+    tokens = FALLBACK_PREVIEW_EXTENSIONS;
+  }
+  var basename = text.split("/").pop().toLowerCase();
+  if (tokens.indexOf(basename) !== -1) {
+    return true; /* Makefile, LICENSE, Dockerfile, .gitignore, ... */
+  }
+  var ext = previewExtension(text);
+  return !!ext && tokens.indexOf(ext) !== -1;
 }
 
 /** Remote ZIP: central-directory listing whose members can be opened in place. */
@@ -703,8 +726,8 @@ function renderPreviewZip(payload) {
       "</tr>";
   }
   var banner = "Archive inspected remotely: only the ZIP central directory was read, " +
-    "never the whole archive. Click Preview on a CSV, JSON, text or image entry to " +
-    "read just that file.";
+    "never the whole archive. Click Preview on a CSV, JSON, text, code, image or PDF " +
+    "entry to read just that file.";
   if (total > entries.length) {
     banner += " Showing the first " + entries.length + " of " + total + " entries.";
   }
@@ -829,6 +852,61 @@ function renderMarkdown(text) {
   return html.join("");
 }
 
+
+/* -------------------------------------------------------------- PDF viewer */
+/** Free the Blob URL of the ZIP-extracted PDF currently displayed. */
+function releasePreviewPdf() {
+  if (previewObjectUrl) {
+    window.URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = null;
+  }
+}
+
+/** Decode the base64 payload of a ZIP member into raw bytes. */
+function previewBase64Bytes(encoded) {
+  var binary = window.atob(String(encoded));
+  var bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/** PDF: a direct iframe for remote URLs, a Blob URL for ZIP members. */
+function renderPreviewPdf(payload, entry) {
+  var source = "";
+  var note = "";
+  if (payload && payload.pdf_base64) {
+    try {
+      releasePreviewPdf();
+      var blob = new Blob(
+        [previewBase64Bytes(payload.pdf_base64)],
+        { type: "application/pdf" }
+      );
+      previewObjectUrl = window.URL.createObjectURL(blob);
+      source = previewObjectUrl;
+      note = "PDF decoded from the ZIP archive in memory; only that member was read.";
+    } catch (error) {
+      return renderPreviewUnsupported(
+        { reason: "The PDF inside the archive could not be decoded." },
+        entry
+      );
+    }
+  } else {
+    source = safeUrl(payload && payload.pdf_url);
+    note = "PDF served directly by the repository.";
+  }
+  if (!source) {
+    return renderPreviewUnsupported(
+      { reason: "The PDF URL could not be validated." },
+      entry
+    );
+  }
+  var name = String(payload.inner_path || (entry && entry.key) || "PDF preview");
+  return '<iframe class="preview-pdf" src="' + escapeHtml(source) +
+    '" title="' + escapeHtml(name) + '"></iframe>' +
+    '<p class="preview-status">' + escapeHtml(note) + "</p>";
+}
 
 /* --------------------------------------------------- image and unsupported */
 /** Remote image URLs are hot-linked; ZIP-extracted ones are safe data URIs. */

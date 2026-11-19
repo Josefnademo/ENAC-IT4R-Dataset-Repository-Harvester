@@ -1496,6 +1496,17 @@ body.preview-open {
   background: #ffffff;
 }
 
+/* Native PDF viewer: remote URLs and ZIP members both land in this iframe. */
+.preview-pdf {
+  display: block;
+  width: 100%;
+  height: 70vh;
+  min-height: 420px;
+  background: var(--gray-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
 .preview-unsupported {
   display: flex;
   flex-direction: column;
@@ -1816,6 +1827,11 @@ body.preview-open {
 
   .preview-map {
     height: 320px;
+  }
+
+  .preview-pdf {
+    height: 56vh;
+    min-height: 320px;
   }
 }
 

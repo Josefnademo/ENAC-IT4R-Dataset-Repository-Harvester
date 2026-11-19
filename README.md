@@ -20,8 +20,8 @@ through their public APIs, anonymously, within their published rate limits.
 | Delta sync | Every upsert is classified `new`, `updated` or `unchanged` (tracked-field comparison in SQLite) |
 | Metadata richness | Authors, ORCIDs, EPFL lab acronyms, parent organizations (ENAC / SB / EPFL), unit managers (PIs), funding, keywords, licence, access rights, DOI, file count/size/extensions, linked code repository |
 | Local-first UI | The browser only reads SQLite; upstream calls happen exclusively on **Run Scraper (Live API)** and on an explicit **Preview Data** request |
-| In-browser data preview | **Preview Data** on a card opens an overlay that renders CSV/TSV tables, JSON, GeoJSON maps, text/YAML/Markdown, images and the file list of remote ZIP archives — never downloading a multi-GB archive |
-| Live console | Every scraper log line is streamed into the dashboard by cursor-based polling |
+| In-browser data preview | **Preview Data** on a card opens an overlay that renders CSV/TSV tables, JSON, GeoJSON maps, PDFs, source code, text/YAML/Markdown, images and the file list of remote ZIP archives — never downloading a multi-GB archive; the previewable formats come from one declarative `PREVIEW_REGISTRY` shared by backend and UI |
+| Live console | Every scraper log line is streamed into the dashboard by cursor-based polling (1.5 s during a harvest, 10 s when idle, paused while the tab is hidden) |
 | Exports | CSV and JSON of the currently filtered result set |
 
 ---
@@ -31,6 +31,8 @@ through their public APIs, anonymously, within their published rate limits.
 ```
 .
 ├─ run.py                          CLI entry point (dashboard or headless harvest)
+├─ tasks.py                        cross-platform task runner (run / test / check / harvest / clean)
+├─ Makefile                        same targets for shells that have make
 ├─ requirements.txt                requests only
 ├─ backend/
 │  ├─ config.py                    verified API constraints, resource taxonomy, paths
@@ -43,6 +45,7 @@ through their public APIs, anonymously, within their published rate limits.
 │  ├─ logger.py                    ring-buffer logger feeding the console
 │  └─ server.py                    threading HTTP server, static + JSON API
 ├─ frontend/                       index.html, styles.css, preview.js, app.js (no build step)
+├─ tests/                          offline unittest suite (models, storage, preview, API, optional E2E)
 ├─ docs/
 │  ├─ TECHNICAL_ARCHITECTURE.md    end-to-end design and verified API behaviour
 │  └─ recon/                       Phase 1 probe artefacts (evidence for the taxonomy)
@@ -75,6 +78,22 @@ python run.py --port 9000 --open
 The first launch shows an empty state until a harvest is executed from the UI
 (**Run Scraper (Live API)**). Reloading the page never calls the upstream APIs.
 
+### Shortcuts (`make` / `tasks.py`)
+
+The `Makefile` wraps the everyday commands, and `tasks.py` runs the same targets on
+shells without `make` (Windows PowerShell or `cmd`):
+
+| Command | Equivalent | Action |
+|---|---|---|
+| `make run` | `python tasks.py run` | Start the dashboard on http://127.0.0.1:8080/ |
+| `make test` | `python tasks.py test` | Run the full regression suite (`python -m unittest discover -s tests -v`) |
+| `make check` | `python tasks.py check` | Compile Python, `node --check` both frontend scripts, then run the tests |
+| `make harvest` | `python tasks.py harvest` | Seven-day dataset harvest, headless |
+| `make clean` | `python tasks.py clean` | Remove `__pycache__/` directories and stray `.pyc` files |
+
+`make` calls `python` by default; point it at a virtual environment with
+`make PYTHON=.venv/bin/python test`.
+
 ### Headless harvest (CI / cron / quick check)
 
 ```bash
@@ -87,19 +106,37 @@ python run.py --harvest --from 2026-01-01 --to 2026-03-31 --type software
 (default `dataset`). The command prints a summary and exits; the dashboard picks the new
 records up on the next refresh.
 
+### Tests
+
+The regression suite runs offline and needs no third-party test runner:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+| Module | Covers |
+|---|---|
+| `tests/test_models_and_storage.py` | Normalization / typing / file-summary helpers, delta detection (`new` / `updated` / `unchanged`), superset DOI merge, JSON mirror rewrites, and per-scope harvest-run retention |
+| `tests/test_preview_and_api.py` | SSRF allow-list, `PREVIEW_REGISTRY` resolution, the shared byte parsers, in-memory ZIP directory + member extraction (CSV, source code, PDF, PNG), and live `create_server(port=0)` round-trips for every JSON endpoint |
+| `tests/test_e2e_playwright.py` | Cards, search, keyword badges and the preview modal in Chromium; auto-skipped unless `playwright` is installed (`pip install playwright` then `playwright install chromium`) |
+
+The ZIP tests patch `_remote_zip_size` and `_HttpRangeFile` with an in-memory archive,
+so the remote-inspection path is exercised byte-for-byte without contacting Zenodo, and
+`/api/preview` is checked over real HTTP against a temporary SQLite database.
+
 ---
 
 ## 5. HTTP API
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/data` | Snapshot from SQLite: `items`, `last_run`, `runs`, `filters`, `default_filter` |
+| `GET /api/data` | Snapshot from SQLite: `items`, `last_run`, `runs`, `filters`, `default_filter`, `preview_extensions` |
 | `GET /api/preview?url=<encoded_file_url>&name=<filename>[&inner=<path_inside_zip>]` | Bounded preview of one record file, or of one file stored inside a remote ZIP (400 for any host outside `zenodo.org` / `infoscience.epfl.ch`, 404 for an unknown archive member, 413 when a member exceeds the in-memory budget, 502 when the repository cannot be reached) |
 | `GET /api/record-files?id=<canonical_id>` | Resolves the file inventory of a record stored without preview `entries`, caches it in SQLite + JSON mirror, and returns `{"canonical_id", "file_summary"}` (404 for a non-Zenodo record, 502 when Zenodo cannot be reached) |
 | `GET /api/harvest?from=YYYY-MM-DD&to=YYYY-MM-DD&type=dataset` | Runs one live harvest (409 when a harvest is already running, 400 on bad input) |
 | `GET /api/logs?since=<cursor>` | Incremental console entries plus the new cursor |
 | `GET /api/status` | Version, record count, last run, database and mirror paths |
-| `GET /api/filters` | Resource taxonomy for the UI |
+| `GET /api/filters` | Resource taxonomy plus `preview_extensions` (the sorted `PREVIEW_REGISTRY` keys) for the UI |
 
 ---
 
@@ -119,8 +156,10 @@ so `app.js` only keeps the dashboard: cards, filters, exports and polling.
 |---|---|
 | `.csv`, `.tsv` | First **256 KB**, decoded UTF-8 (latin-1 fallback), delimiter auto-detected, header row + at most **100 rows**. The overlay renders a sticky-header table with row numbers, a client-side row filter and a truncation banner, plus a **Quick Chart** view (inline SVG, no library) with X/Y column pickers over the first 100 rows |
 | `.geojson`, `.json` | First **1 MB**. GeoJSON (`FeatureCollection`, `Feature`, `GeometryCollection`, standard geometries) is rendered on a Leaflet map (loaded lazily from unpkg only when needed, with a formatted-JSON fallback when offline); other JSON is pretty-printed |
+| `.pdf` | A direct PDF URL is hot-linked into an `<iframe>` (the browser streams and paginates it natively, so nothing is proxied). A PDF **inside an archive** cannot be hot-linked: up to **8 MB** are extracted, inlined as base64 and rendered from a Blob URL that the overlay revokes when you switch file or close the modal |
+| `.py`, `.js`, `.ts`, `.c`, `.cpp`, `.h`, `.rs`, `.go`, `.java`, `.r`, `.jl`, `.sh`, `.sql`, `.toml`, `.ini`, `.cfg`, `.xml`, `.rst`, `.tex`, `.bib`, plus extensionless `Makefile` / `Dockerfile` / `LICENSE` / `README` | Source code, build files and documentation share the text viewer: first **256 KB** in a monospace pane (Markdown files detected by `.md` still get the Rendered \| Raw toggle) |
 | `.txt`, `.md`, `.yml`, `.yaml` | First **256 KB**. `.md` files are formatted by default (headings, bold, inline/fenced code, bullet lists, clickable links — every character escaped before formatting) with a **Rendered \| Raw** toggle; other text is a monospace viewer |
-| `.zip` | The **central directory only**, read through HTTP `Range` requests (HEAD/Content-Range probe + seekable remote file wrapper), so a 17 GB archive lists its entries with one 1 MB range request. Up to 200 entries: path, extension badge, uncompressed size, and a **Preview** pill on CSV/TSV/JSON/GeoJSON/text/Markdown/YAML/image members. Clicking one reads only that member (≤ 10 MB uncompressed, ≤ 12 MB compressed, ≤ 4 MB for inlined images) and shows it under a sticky **← Back to `<archive>` contents** breadcrumb; archives whose directory would exceed a 12 MB metadata budget are refused with HTTP 413 |
+| `.zip` | The **central directory only**, read through HTTP `Range` requests (HEAD/Content-Range probe + seekable remote file wrapper), so a 17 GB archive lists its entries with one 1 MB range request. Up to 200 entries: path, extension badge, uncompressed size, and a **Preview** pill on CSV/TSV/JSON/GeoJSON/text/Markdown/YAML/image/PDF/source-code members. Clicking one reads only that member (≤ 10 MB uncompressed, ≤ 12 MB compressed, ≤ 4 MB for inlined images) and shows it under a sticky **← Back to `<archive>` contents** breadcrumb; archives whose directory would exceed a 12 MB metadata budget are refused with HTTP 413 |
 | `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg` | Hot-linked full-resolution image (images extracted from a ZIP are inlined as a base64 data URI instead) |
 | `.nc`, `.zarr`, `.gpkg`, `.parquet`, `.h5`, … | Explicit "binary scientific format" notice with the direct download link |
 

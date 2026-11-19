@@ -33,7 +33,12 @@ from .harvester import (
 )
 from .logger import get_logger, log_snapshot
 from .models import parse_iso_date, utc_now_iso
-from .preview import PreviewError, build_preview, fetch_record_file_summary
+from .preview import (
+    PreviewError,
+    build_preview,
+    fetch_record_file_summary,
+    supported_preview_extensions,
+)
 from .storage import get_storage
 
 logger = logging.getLogger("enac_it4r.harvester")
@@ -176,6 +181,7 @@ class HarvesterRequestHandler(SimpleHTTPRequestHandler):
                         "filters": public_filters(),
                         "default": DEFAULT_RESOURCE_FILTER,
                         "resource_classes": ALL_RESOURCE_CLASSES,
+                        "preview_extensions": supported_preview_extensions(),
                     }
                 )
             else:
@@ -213,6 +219,7 @@ class HarvesterRequestHandler(SimpleHTTPRequestHandler):
                 "filters": public_filters(),
                 "default_filter": DEFAULT_RESOURCE_FILTER,
                 "resource_classes": ALL_RESOURCE_CLASSES,
+                "preview_extensions": supported_preview_extensions(),
                 "source": "sqlite",
             }
         )
