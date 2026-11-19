@@ -19,7 +19,8 @@ through their public APIs, anonymously, within their published rate limits.
 | Cross-repository merge | Records sharing a normalized DOI are merged; Infoscience wins on labs/PIs/hierarchy, Zenodo wins on file inventory and code links |
 | Delta sync | Every upsert is classified `new`, `updated` or `unchanged` (tracked-field comparison in SQLite) |
 | Metadata richness | Authors, ORCIDs, EPFL lab acronyms, parent organizations (ENAC / SB / EPFL), unit managers (PIs), funding, keywords, licence, access rights, DOI, file count/size/extensions, linked code repository |
-| Local-first UI | The browser only reads SQLite; upstream calls happen exclusively on **Run Scraper (Live API)** |
+| Local-first UI | The browser only reads SQLite; upstream calls happen exclusively on **Run Scraper (Live API)** and on an explicit **Preview Data** request |
+| In-browser data preview | **Preview Data** on a card opens an overlay that renders CSV/TSV tables, JSON, GeoJSON maps, text/YAML/Markdown, images and the file list of remote ZIP archives — never downloading a multi-GB archive |
 | Live console | Every scraper log line is streamed into the dashboard by cursor-based polling |
 | Exports | CSV and JSON of the currently filtered result set |
 
@@ -33,7 +34,8 @@ through their public APIs, anonymously, within their published rate limits.
 ├─ requirements.txt                requests only
 ├─ backend/
 │  ├─ config.py                    verified API constraints, resource taxonomy, paths
-│  ├─ models.py                    HarvestRecord + cleaning / typing helpers
+│  ├─ models.py                    HarvestRecord + cleaning / typing / file-summary helpers
+│  ├─ preview.py                   bounded, SSRF-guarded file preview (incl. remote ZIP)
 │  ├─ scrapers/zenodo.py           Zenodo (InvenioRDM) client
 │  ├─ scrapers/infoscience.py      Infoscience (DSpace 7) client + WAF handling
 │  ├─ harvester.py                 parallel fetch, DOI merge, persistence
@@ -92,6 +94,8 @@ records up on the next refresh.
 | Endpoint | Purpose |
 |---|---|
 | `GET /api/data` | Snapshot from SQLite: `items`, `last_run`, `runs`, `filters`, `default_filter` |
+| `GET /api/preview?url=<encoded_file_url>&name=<filename>` | Bounded preview of one record file (400 for any host outside `zenodo.org` / `infoscience.epfl.ch`, 502 when the repository cannot be reached) |
+| `GET /api/record-files?id=<canonical_id>` | Resolves the file inventory of a record stored without preview `entries`, caches it in SQLite + JSON mirror, and returns `{"canonical_id", "file_summary"}` (404 for a non-Zenodo record, 502 when Zenodo cannot be reached) |
 | `GET /api/harvest?from=YYYY-MM-DD&to=YYYY-MM-DD&type=dataset` | Runs one live harvest (409 when a harvest is already running, 400 on bad input) |
 | `GET /api/logs?since=<cursor>` | Incremental console entries plus the new cursor |
 | `GET /api/status` | Version, record count, last run, database and mirror paths |
@@ -99,7 +103,45 @@ records up on the next refresh.
 
 ---
 
-## 6. Persistence
+## 6. In-browser data preview ("surcouche")
+
+Every card whose record reports files carries a **Preview Data** badge in its footer.
+It opens a modal overlay that inspects one file at a time without downloading the
+record: the overlay has a sticky header with the record title, a file selector (when
+the record lists several files), the file-size badge, a direct download link, and it
+closes with the button, `Escape` or a click on the backdrop.
+
+`GET /api/preview` only reads a hard byte budget per format:
+
+| File | Preview |
+|---|---|
+| `.csv`, `.tsv` | First **256 KB**, decoded UTF-8 (latin-1 fallback), delimiter auto-detected, header row + at most **100 rows**. The overlay renders a sticky-header table with row numbers, a client-side row filter and a truncation banner |
+| `.geojson`, `.json` | First **1 MB**. GeoJSON (`FeatureCollection`, `Feature`, `GeometryCollection`, standard geometries) is rendered on a Leaflet map (loaded lazily from unpkg only when needed, with a formatted-JSON fallback when offline); other JSON is pretty-printed |
+| `.txt`, `.md`, `.yml`, `.yaml` | First **256 KB** in a monospace viewer |
+| `.zip` | The **central directory only**, read through HTTP `Range` requests (HEAD/Content-Range probe + seekable remote file wrapper), so a 17 GB archive lists its entries with one 1 MB range request. Up to 200 entries: path, extension badge, uncompressed size; archives whose directory would exceed a 12 MB metadata budget are refused with HTTP 413 |
+| `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg` | Hot-linked full-resolution image |
+| `.nc`, `.zarr`, `.gpkg`, `.parquet`, `.h5`, … | Explicit "binary scientific format" notice with the direct download link |
+
+**Security.** The endpoint is a strict SSRF allow-list: only `https://` URLs whose
+hostname is `zenodo.org` or `infoscience.epfl.ch` are fetched; anything else is
+rejected with **HTTP 400** before a socket is opened.
+
+**File inventory.** `file_summary` keeps its original `count`, `total_bytes`,
+`total_human` and `extensions` fields and now also stores `entries` (first **25**
+files per record) with `key`, `size`, `size_human`, `ext` and `url`, where `url` is
+`files[].links.self` (or the rebuilt
+`https://zenodo.org/api/records/<record_id>/files/<key>/content` fallback).
+`file_summary` is a tracked field, so a changed upload list marks the row `updated`.
+Records harvested before this feature only know the file count: the overlay calls
+`GET /api/record-files?id=<canonical_id>`, which fetches
+`https://zenodo.org/api/records/<record_id>` once, caches the rebuilt inventory in
+SQLite and `data/dataset_cache.json`, and returns it — the file selector is then
+populated without re-running a harvest, and later clicks read it straight from
+SQLite.
+
+---
+
+## 7. Persistence
 
 | Store | Path | Role |
 |---|---|---|
@@ -112,7 +154,7 @@ Deleting `data/` resets the application to an empty state without touching confi
 
 ---
 
-## 7. Verified upstream constraints
+## 8. Verified upstream constraints
 
 The numbers below were measured against the live APIs during Phase 1 and are enforced in
 `backend/config.py`; section 4 of `docs/TECHNICAL_ARCHITECTURE.md` explains each one.

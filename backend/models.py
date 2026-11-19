@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import PurePosixPath
 from typing import Any, Dict, Iterable, List, Optional
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 from .config import ABSTRACT_LIMIT, ALL_RESOURCE_CLASSES, PLACEHOLDER_VALUE
 
@@ -316,8 +316,39 @@ def file_extension(key: Any) -> str:
     return suffix if suffix and len(suffix) <= 12 else ""
 
 
-def build_file_summary(files: Any) -> Dict[str, Any]:
-    """Summarize a Zenodo ``files`` list into count, size and extensions."""
+#: Every record keeps at most this many individual file entries, which is
+#: enough for the in-browser preview selector without bloating the cache.
+FILE_SUMMARY_ENTRY_LIMIT = 25
+
+
+def _file_download_url(
+    entry: Dict[str, Any], key: str, record_id: Any
+) -> str:
+    """Direct ``/content`` URL of one file, from its links or rebuilt by id."""
+    links = entry.get("links")
+    if isinstance(links, dict):
+        for link_key in ("self", "content"):
+            candidate = str(links.get(link_key) or "").strip()
+            if candidate.startswith("https://"):
+                return candidate
+    record_text = str(record_id or "").strip()
+    if record_text and key:
+        return (
+            f"https://zenodo.org/api/records/{record_text}/files/"
+            f"{quote(key, safe='')}/content"
+        )
+    return ""
+
+
+def build_file_summary(
+    files: Any, record_id: Any = None
+) -> Dict[str, Any]:
+    """Summarize a Zenodo ``files`` list into count, size and extensions.
+
+    ``entries`` keeps the first :data:`FILE_SUMMARY_ENTRY_LIMIT` files so the
+    dashboard can preview one of them, while the aggregate fields stay exactly
+    as before (every file is still counted and measured).
+    """
     entries: List[Dict[str, Any]] = []
     if isinstance(files, list):
         entries = [f for f in files if isinstance(f, dict)]
@@ -329,20 +360,35 @@ def build_file_summary(files: Any) -> Dict[str, Any]:
     extensions: List[str] = []
     total_bytes = 0
     counted = 0
+    file_entries: List[Dict[str, Any]] = []
     for entry in entries:
-        ext = file_extension(entry.get("key") or entry.get("filename"))
+        key = clean_text(entry.get("key") or entry.get("filename"))
+        ext = file_extension(key)
         if ext and ext not in extensions:
             extensions.append(ext)
         size = entry.get("size")
-        if isinstance(size, (int, float)):
-            total_bytes += int(size)
+        has_size = isinstance(size, (int, float))
+        size_bytes = int(size) if has_size else 0
+        if has_size:
+            total_bytes += size_bytes
             counted += 1
+        if key and len(file_entries) < FILE_SUMMARY_ENTRY_LIMIT:
+            file_entries.append(
+                {
+                    "key": key,
+                    "size": size_bytes,
+                    "size_human": human_size(size_bytes) if has_size else "",
+                    "ext": ext,
+                    "url": _file_download_url(entry, key, record_id),
+                }
+            )
 
     return {
         "count": len(entries),
         "total_bytes": total_bytes if counted else 0,
         "total_human": human_size(total_bytes) if counted else "",
         "extensions": sorted(extensions),
+        "entries": file_entries,
     }
 
 

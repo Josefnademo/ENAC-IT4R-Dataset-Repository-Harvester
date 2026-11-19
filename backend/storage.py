@@ -227,7 +227,10 @@ class Storage:
             stored = previous.get(field_name)
             incoming = fresh.get(field_name)
             if field_name in JSON_FIELDS:
-                if _json_column(stored, []) != list(incoming or []):
+                # ``file_summary`` is the only dict-valued JSON column; the
+                # others (authors, keywords, ...) are lists.
+                default: Any = {} if field_name == "file_summary" else []
+                if _json_column(stored, default) != (incoming or default):
                     return True
             elif (stored or "") != (incoming or ""):
                 return True
@@ -319,6 +322,23 @@ class Storage:
                     counts["unchanged"] += 1
             self._conn.commit()
         return counts
+
+    def update_file_summary(
+        self, canonical_id: str, file_summary: Dict[str, Any]
+    ) -> None:
+        """Persist an on-demand file inventory and refresh the JSON mirror.
+
+        The preview overlay resolves missing ``entries`` for records harvested
+        before the feature existed; caching the result here makes every later
+        click a pure SQLite read.
+        """
+        with self._lock:
+            self._conn.execute(
+                "UPDATE records SET file_summary = ? WHERE canonical_id = ?",
+                (_encode(file_summary or {}), str(canonical_id or "")),
+            )
+            self._conn.commit()
+        self.export_json_mirror()
 
     # -- run audit trail --------------------------------------------------
     @staticmethod
@@ -452,6 +472,15 @@ class Storage:
         return {"id": row_id, "coalesced": False}
 
     # -- reads ------------------------------------------------------------
+    def get_record(self, canonical_id: str) -> Optional[Dict[str, Any]]:
+        """Return one stored record by its canonical identifier, or ``None``."""
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT * FROM records WHERE canonical_id = ?",
+                (str(canonical_id or ""),),
+            ).fetchone()
+        return record_from_row(dict(row)) if row else None
+
     def load_records(self) -> List[Dict[str, Any]]:
         """Return every stored record, newest repository date first."""
         with self._lock:

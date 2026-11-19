@@ -108,6 +108,15 @@ to `position: static`, `max-height: none`, `overflow-y: visible` and scrolls wit
 `frontend/app.js` is plain ES2017 with no build step and no framework; every string
 that reaches `innerHTML` passes through `escapeHtml()` first.
 
+**Preview overlay.** A card whose `file_summary` reports files also renders a
+**Preview Data** badge in `.card-links`. It opens `#preview-modal`: a backdrop-blurred
+dialog (`max-width: 1100px; max-height: 86vh`) with a fixed header (record title,
+EPFL-red accent), a toolbar (file `<select>`, size badge, "Download original" link) and
+a scrollable body. `Escape`, the close button and a backdrop click close it, and
+`document.body.preview-open` freezes the page behind. Renderers are chosen from the
+`kind` returned by `/api/preview` (`table`, `geojson`, `zip`, `json`, `text`, `image`,
+`unsupported`); see §8.
+
 | Sidebar panel | Contents |
 |---|---|
 | Harvest window | Presets (7/14/30/90 days, 1 year, all time) plus free `From` / `To` date inputs. The window drives **both** the live API query and the local display filter, so what the console reports and what the list shows can never diverge. |
@@ -212,7 +221,7 @@ Endpoint: `GET https://zenodo.org/api/communities/epfl/records?q=...&size=25&pag
 | `funding` | `metadata.grants[].title`, with the `acronym` in parentheses when it names a programme (`NCCR SPIN`, `EoCoE-III`); `grant.code` — a funder number such as `200021-227992` — is never emitted |
 | `resource_type` | `metadata.resource_type.type` plus `metadata.resource_type.subtype` when present |
 | `code_repo` | first of: `metadata.custom["code:codeRepository"]` → `metadata.related_identifiers[]` (`identifier` of every `scheme: "url"` / `http…` entry, relations tried in the order `isVersionOf`, `isSupplementTo`, `isDerivedFrom`, `isIdenticalTo`, `isDocumentedBy`, then any other relation) → first code-forge URL in `metadata.description` (regex scan) |
-| `file_summary` | `files[]` → count, total bytes, `total_human`, distinct extensions |
+| `file_summary` | `files[]` → count, total bytes, `total_human`, distinct extensions, plus `entries` (first 25: `key`, `size`, `size_human`, `ext`, `url` from `links.self` or `/api/records/{id}/files/{key}/content`) |
 | `keywords` | `split_keywords(metadata.keywords)` — list, dict (`subject`/`value`) or delimited string |
 | `license` | `metadata.license.id` / `license` |
 | `access_rights` | `metadata.access_right` (falling back to `metadata.access`) |
@@ -563,19 +572,158 @@ Every constraint below was observed live; the constants live in `backend/config.
 
 ---
 
-## 8. Module map and extension points
+## 8. In-browser data preview
+
+The dashboard must answer "what is inside this record?" without spending a
+multi-gigabyte download. `backend/preview.py` implements `GET /api/preview?url=<file
+url>&name=<filename>` as a **read-only, bounded** pipeline; `backend/server.py` maps
+its `PreviewError` to the HTTP status it carries and everything else to a JSON body.
+
+A second endpoint, `GET /api/record-files?id=<canonical_id>`, rebuilds the file
+inventory of a record whose stored `file_summary` predates the preview `entries`
+(see §8.2), so the overlay never depends on the harvest window.
+
+```
+Browser                backend/server.py            backend/preview.py          Repository
+   |  GET /api/preview       |                              |                        |
+   |------------------------>| build_preview(url, name)      |                        |
+   |                         |----------------------------->| validate_preview_url()  |
+   |                         |                              | classify by extension  |
+   |                         |                              |--> Range GET / HEAD -->|
+   |                         |<-----------------------------| bounded JSON preview   |
+   |<------------------------| {kind, ...}                   |                        |
+```
+
+### 8.1 SSRF guard
+
+`validate_preview_url()` accepts only `https://` URLs whose hostname is exactly
+`zenodo.org` or `infoscience.epfl.ch`; a URL with credentials (`user:pass@`), any
+other scheme (`http`, `ftp`, `file`) or any other host is rejected with **HTTP 400**
+before a socket is opened. Errors while talking to an allowed repository become
+**HTTP 502**.
+
+### 8.2 On-demand file inventory (`GET /api/record-files`)
+
+`file_summary` is a tracked field, so the scraper path already persists `entries`,
+`count`, `total_bytes` and the download URLs. Rows written before this feature — or
+last touched outside the current harvest window — only know the aggregate count,
+which would leave the overlay without a file selector.
+
+`fetch_record_file_summary(record)` closes that gap:
+
+1. when `record["file_summary"]["entries"]` is non-empty it returns the stored dict
+   unchanged, so the endpoint is a no-op for fresh rows;
+2. otherwise `resolve_zenodo_record_id()` extracts the numeric record ID from
+   `source_id` (`zenodo-<digits>`) or `doi` (`10.5281/zenodo.<digits>`); a record
+   matched by neither is answered with **404** ("This repository does not expose
+   downloadable file metadata for this record."), because Infoscience does not
+   publish a machine-readable file listing here;
+3. one `GET https://zenodo.org/api/records/<recid>` with the shared `REQUEST_HEADERS`
+   and a `(PROBE_TIMEOUT, PREVIEW_TIMEOUT)` budget returns the record payload, which
+   is mapped through the same `build_file_summary(files, recid)` the scraper uses
+   (HTTP ≥ 400 or a network error becomes **502**).
+
+`_api_record_files()` then calls `Storage.update_file_summary()`, which updates the
+`file_summary` column and rewrites `data/dataset_cache.json`, and returns
+`{"canonical_id": ..., "file_summary": ...}`. The overlay copies that dict into
+`state.items`, so reopening the modal renders the selector immediately and a page
+reload finds the inventory in SQLite.
+
+### 8.3 Byte budgets and payload shapes
+
+| Extensions | Strategy | Response |
+|---|---|---|
+| `.csv`, `.tsv` | Range GET for the first 262 144 bytes, incomplete trailing line dropped, UTF-8 then latin-1, `csv.Sniffer` on the first 8 KB (delimiters `, ; \t \|`), header + at most 100 rows | `{"kind": "table", "truncated", "columns", "rows", "row_count_shown"}` |
+| `.geojson`, `.json` | Up to 1 048 576 bytes; JSON parsed; GeoJSON detected via `type` in `FeatureCollection`, `Feature`, `GeometryCollection`, `Point`, `MultiPoint`, `LineString`, `MultiLineString`, `Polygon`, `MultiPolygon` | `{"kind": "geojson", "geojson"}` or `{"kind": "json", "content"}` (pretty-printed); unparsable/truncated JSON degrades to `text` |
+| `.txt`, `.md`, `.yml`, `.yaml` | Up to 262 144 bytes, UTF-8/latin-1 | `{"kind": "text", "truncated", "content"}` |
+| `.zip` | Central directory through HTTP Range requests, at most 200 listed entries | `{"kind": "zip", "entry_count", "entries": [{name, size, size_human, ext}]}` |
+| `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg` | No proxy at all: the validated URL is returned for hot-linking | `{"kind": "image", "image_url"}` |
+| anything else (`.nc`, `.zarr`, `.gpkg`, `.parquet`, `.h5`, …) | no fetch | `{"kind": "unsupported", "reason": "Binary scientific format — download record to inspect in Python/QGIS"}` |
+
+`_fetch_bytes()` asks for `limit + 1` bytes through a `Range` header and stops as
+soon as the buffer exceeds the budget, so truncation is detected without reading the
+rest of the file. `Accept-Encoding: identity` keeps the budget in transferred bytes
+rather than decompressed bytes, a `200` response (server ignoring Range) is still
+capped by `iter_content`, and a `416` (range past EOF) is retried without Range.
+
+### 8.4 Remote ZIP inspection without downloading the archive
+
+`_HttpRangeFile(io.RawIOBase)` is a seekable, read-only file object over
+`Range: bytes=start-end` GETs:
+
+* `_remote_zip_size()` first tries `HEAD` (6 s budget) for `Content-Length` and
+  `Accept-Ranges: bytes`; Zenodo's CDN omits `Accept-Ranges` and answers HEAD slowly,
+  so a one-byte `Range` GET confirms the capability and yields the total size from
+  `Content-Range: bytes 0-0/<total>`;
+* a `200` answer is accepted in addition to `206` only when the range is
+  `0..(size-1)` and `Content-Length` matches the archive size — some CDNs do that
+  for a small file whose requested range spans all of it; any other status is
+  treated as "no Range support";
+* `read()` serves from a 1 MB read-ahead buffer that aligns to the **end** of the
+  archive when reading near EOF. The end-of-central-directory record, the zip64
+  locator and the central directory therefore travel in one request: listing a
+  330 MB / 533-entry archive costs exactly one 1 MB Range GET after the size
+  probe;
+* an unbounded `read()` is capped at 1 MB, and the wrapper refuses to transfer
+  more than 12 MB of ZIP metadata (`MAX_ZIP_BYTES`, HTTP 413), so even a
+  million-entry archive can never pull its whole directory into memory;
+* a server without Range support yields
+  `{"kind": "unsupported", "reason": "Remote server does not support partial ZIP inspection"}`.
+
+### 8.5 Frontend renderers
+
+`renderPreviewPayload()` dispatches on `kind`:
+
+* **table** — `renderPreviewTable()` builds a `<table>` with sticky headers and a
+  sticky row-number column, a `title` on every cell (full value even when ellipsised)
+  and a row filter (`bindPreviewTableFilter()`) that hides non-matching `<tr>`s and
+  updates the "shown / total" counter. The banner states that only the first 256 KB
+  and 100 rows are displayed whenever `truncated` is true.
+* **geojson** — `renderPreviewGeojsonShell()` emits the map container, a status line
+  and a hidden `<pre class="preview-code">` fallback. `loadLeaflet()` lazily injects
+  `leaflet@1.9.4` CSS + JS from unpkg **only on first use**; `mountPreviewMap()` adds
+  an OpenStreetMap tile layer, fits bounds to the GeoJSON layer, and binds a popup
+  listing up to 12 feature properties (all HTML-escaped). If the CDN is unreachable,
+  the map is hidden and the formatted GeoJSON is revealed instead.
+* **zip** — a table of internal paths, extension badges and uncompressed sizes, with
+  a note that only the central directory was read.
+* **json / text** — `<pre class="preview-code">` with `escapeHtml()`, plus the
+  truncation banner where applicable.
+* **image** — a centered, responsive `<img>` (max-height 58 vh).
+* **unsupported** — reason, file metadata and a direct download button.
+
+`openPreview(item)` drives the selector: `previewEntries(item)` collects the cached
+`entries`, `populatePreviewSelect()` fills `#preview-file` (`key · size_human`, the
+list disabled below two files) and `loadPreviewFile(0)` renders the first one. When
+the record has no cached entries, the body shows "Loading file list from
+repository…", `GET /api/record-files?id=<canonical_id>` is awaited under the same
+`previewState.token` guard, the returned summary is written into `state.items`
+(`cachePreviewInventory()`), the selector is populated and the first file is loaded.
+A record with no attachments at all shows "No downloadable files are attached to
+this record."; a failure renders the backend `detail` inside
+`.preview-notice.is-error`.
+
+State lives in `previewState` (`item`, `entries`, `index`, `token`, `map`). Every file
+load increments `token`, so a slow response for a previously selected file is dropped;
+`destroyPreviewMap()` tears down the Leaflet instance before switching files or
+closing, and `closePreview()` clears the body and the `preview-open` scroll lock.
+
+---
+
+## 9. Module map and extension points
 
 | Module | Responsibility | Typical extension |
 |---|---|---|
 | `backend/config.py` | Paths, verified API constants, `RESOURCE_FILTERS` taxonomy | Add a filter (e.g. `publication`) by adding a key with `zenodo_query`, `infoscience_query`, `classes`, `label`, `pill`, `description` |
-| `backend/models.py` | `HarvestRecord`, `clean_text()`, `split_keywords()`, type classification, file summaries | Add a field: extend the dataclass, `to_dict()`, `record_from_row()` and `storage.COLUMNS` |
+| `backend/models.py` | `HarvestRecord`, `clean_text()`, `split_keywords()`, type classification, file summaries (counts + first 25 `entries` with download URLs) | Add a field: extend the dataclass, `to_dict()`, `record_from_row()` and `storage.COLUMNS` |
+| `backend/preview.py` | SSRF allow-list, bounded Range fetches per format, table/JSON/GeoJSON/text/ZIP/image preview payloads, on-demand Zenodo file inventory | Add a renderer: a `_preview_<ext>()` helper plus a branch in `build_preview()`; a new trusted host goes in `ALLOWED_HOSTS` |
 | `backend/scrapers/zenodo.py` | Lucene query build, creator/grant/license extraction, keyword splitting, pacing | Add a metadata extractor (e.g. `metadata.dates`) |
 | `backend/scrapers/infoscience.py` | Solr query build, DSpace metadata extraction, WAF replay | Add a CRIS field (`cris.virtual.*`) to the record mapping |
 | `backend/harvester.py` | Window resolution, parallel fetch, DOI merge, run bookkeeping | Change merge precedence in `_merge_pair()` |
-| `backend/storage.py` | SQLite schema, delta detection, JSON mirror | Add a tracked field to `TRACKED_FIELDS` to make it delta-sensitive |
+| `backend/storage.py` | SQLite schema, delta detection, JSON mirror, on-demand `file_summary` caching | Add a tracked field to `TRACKED_FIELDS` to make it delta-sensitive |
 | `backend/logger.py` | Ring-buffer log handler + cursor snapshots | Change `LOG_BUFFER_SIZE` for a longer console history |
 | `backend/server.py` | Static serving + JSON API | Add a new `/api/*` route in `_handle_api()` |
-| `frontend/app.js` | Rendering, filtering, exports, polling, and the single-control collapsible contract (`collapsiblePill()`, `renderCollapsibleText()` for prose, `renderCollapsibleItems()` for lists, behind one `[data-collapsible-toggle]` handler) | Field renderers are centralized in `metaList()`, `renderAuthors()`, `renderHeaderBadges()`, `renderFunding()` and `renderKeywords()`; the label vocabulary in `SOURCE_LABELS` and `FALLBACK_FILTERS` |
+| `frontend/app.js` | Rendering, filtering, exports, polling, the preview overlay, and the single-control collapsible contract (`collapsiblePill()`, `renderCollapsibleText()` for prose, `renderCollapsibleItems()` for lists, behind one `[data-collapsible-toggle]` handler) | Field renderers are centralized in `metaList()`, `renderAuthors()`, `renderHeaderBadges()`, `renderFunding()` and `renderKeywords()`; the label vocabulary in `SOURCE_LABELS` and `FALLBACK_FILTERS`; preview renderers in `renderPreviewPayload()` |
 
 **Design rules kept throughout:** no third-party Python package beyond `requests`; no
 JavaScript build step or framework; no credentials or environment-specific values; every

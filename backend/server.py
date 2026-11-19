@@ -1,7 +1,10 @@
 """Threading HTTP server: static frontend assets plus a small JSON API.
 
-Only ``GET /api/harvest`` touches the external repositories. ``GET /api/data``
-always answers from SQLite, so a browser refresh never triggers upstream calls.
+``GET /api/harvest`` runs a live harvest, ``GET /api/preview`` performs one
+bounded, read-only fetch of a single record file, ``GET /api/record-files``
+resolves and caches the file inventory of a record stored without one, and
+``GET /api/data`` always answers from SQLite, so a browser refresh never
+triggers upstream calls.
 """
 
 from __future__ import annotations
@@ -30,6 +33,7 @@ from .harvester import (
 )
 from .logger import get_logger, log_snapshot
 from .models import parse_iso_date, utc_now_iso
+from .preview import PreviewError, build_preview, fetch_record_file_summary
 from .storage import get_storage
 
 logger = logging.getLogger("enac_it4r.harvester")
@@ -160,6 +164,10 @@ class HarvesterRequestHandler(SimpleHTTPRequestHandler):
                 self._api_data()
             elif path == "/api/harvest":
                 self._api_harvest(query)
+            elif path == "/api/preview":
+                self._api_preview(query)
+            elif path == "/api/record-files":
+                self._api_record_files(query)
             elif path == "/api/status":
                 self._api_status()
             elif path == "/api/filters":
@@ -207,6 +215,50 @@ class HarvesterRequestHandler(SimpleHTTPRequestHandler):
                 "resource_classes": ALL_RESOURCE_CLASSES,
                 "source": "sqlite",
             }
+        )
+
+    def _api_preview(self, query: Dict[str, List[str]]) -> None:
+        try:
+            payload = build_preview(
+                _first_value(query, "url"), _first_value(query, "name")
+            )
+        except PreviewError as exc:
+            self._send_json(
+                {"error": "preview rejected", "detail": exc.message}, exc.status
+            )
+            return
+        self._send_json(payload)
+
+    def _api_record_files(self, query: Dict[str, List[str]]) -> None:
+        """Resolve a record's file inventory on demand and cache it locally."""
+        canonical_id = _first_value(query, "id")
+        if not canonical_id:
+            self._send_json(
+                {"error": "missing 'id' parameter"}, HTTPStatus.BAD_REQUEST
+            )
+            return
+
+        storage = get_storage()
+        record = storage.get_record(canonical_id)
+        if record is None:
+            self._send_json(
+                {"error": "record not found", "detail": canonical_id},
+                HTTPStatus.NOT_FOUND,
+            )
+            return
+
+        try:
+            summary = fetch_record_file_summary(record)
+        except PreviewError as exc:
+            self._send_json(
+                {"error": "file inventory unavailable", "detail": exc.message},
+                exc.status,
+            )
+            return
+
+        storage.update_file_summary(canonical_id, summary)
+        self._send_json(
+            {"canonical_id": canonical_id, "file_summary": summary}
         )
 
     def _api_status(self) -> None:

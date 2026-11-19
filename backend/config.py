@@ -175,6 +175,8 @@ MAX_HARVEST_RUNS_HISTORY = 25
 MAX_RUNS_PER_SCOPE = 2
 
 # Fields compared on every upsert: a difference marks the row ``updated``.
+# ``file_summary`` is included so a new upload (or a refreshed inventory with
+# preview ``entries``) is persisted and surfaced as an update.
 TRACKED_FIELDS = (
     "title",
     "abstract",
@@ -185,6 +187,7 @@ TRACKED_FIELDS = (
     "resource_type",
     "funding",
     "code_repo",
+    "file_summary",
     "keywords",
     "url",
 )

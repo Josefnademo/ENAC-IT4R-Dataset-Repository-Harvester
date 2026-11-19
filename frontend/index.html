@@ -145,6 +145,33 @@
     </section>
   </main>
 
+  <div class="preview-modal" id="preview-modal" hidden>
+    <div class="preview-backdrop" data-preview-close></div>
+    <div class="preview-dialog" role="dialog" aria-modal="true"
+         aria-labelledby="preview-title">
+      <header class="preview-head">
+        <div class="preview-head-text">
+          <span class="preview-eyebrow">In-browser data preview</span>
+          <h2 id="preview-title">Record</h2>
+        </div>
+        <button type="button" class="preview-close" id="preview-close"
+                data-preview-close aria-label="Close preview" title="Close (Esc)">
+          &times;
+        </button>
+      </header>
+      <div class="preview-toolbar">
+        <label class="preview-file-field" id="preview-file-field" for="preview-file">
+          <span>File</span>
+          <select id="preview-file"></select>
+        </label>
+        <span class="preview-size" id="preview-size"></span>
+        <a class="preview-download" id="preview-download" href="#"
+           target="_blank" rel="noopener noreferrer" hidden>Download original</a>
+      </div>
+      <div class="preview-body" id="preview-body" aria-live="polite"></div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

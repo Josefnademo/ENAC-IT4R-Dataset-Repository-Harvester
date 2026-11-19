@@ -279,7 +279,7 @@ def _record_from_hit(hit: Dict[str, Any]) -> HarvestRecord:
         author_orcids=creators["author_orcids"],
         funding=_grant_labels(metadata),
         code_repo=_code_repo(metadata, custom),
-        file_summary=build_file_summary(hit.get("files")),
+        file_summary=build_file_summary(hit.get("files"), record_id),
         keywords=split_keywords(metadata.get("keywords")),
         license=_license_id(metadata),
         access_rights=_access_rights(metadata),
