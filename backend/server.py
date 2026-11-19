@@ -1,10 +1,10 @@
 """Threading HTTP server: static frontend assets plus a small JSON API.
 
 ``GET /api/harvest`` runs a live harvest, ``GET /api/preview`` performs one
-bounded, read-only fetch of a single record file, ``GET /api/record-files``
-resolves and caches the file inventory of a record stored without one, and
-``GET /api/data`` always answers from SQLite, so a browser refresh never
-triggers upstream calls.
+bounded, read-only fetch of a single record file (or of one file stored inside a
+remote ZIP), ``GET /api/record-files`` resolves and caches the file inventory of
+a record stored without one, and ``GET /api/data`` always answers from SQLite, so
+a browser refresh never triggers upstream calls.
 """
 
 from __future__ import annotations
@@ -220,7 +220,9 @@ class HarvesterRequestHandler(SimpleHTTPRequestHandler):
     def _api_preview(self, query: Dict[str, List[str]]) -> None:
         try:
             payload = build_preview(
-                _first_value(query, "url"), _first_value(query, "name")
+                _first_value(query, "url"),
+                _first_value(query, "name"),
+                _first_value(query, "inner"),
             )
         except PreviewError as exc:
             self._send_json(

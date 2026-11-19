@@ -4,7 +4,8 @@ The dashboard lets a researcher glance at a CSV, a GeoJSON or the table of
 contents of a multi-gigabyte ZIP without downloading the record. This module
 therefore never reads more than a hard byte budget per format, and inspects
 remote ZIP archives through HTTP ``Range`` requests so that only the central
-directory travels over the wire.
+directory travels over the wire. A file stored inside such an archive can be
+previewed on its own (``inner`` argument): only that member's bytes are read.
 
 Security: only ``https://`` URLs on ``zenodo.org`` or ``infoscience.epfl.ch``
 are accepted (SSRF allow-list), and every fetch is bounded.
@@ -12,6 +13,7 @@ are accepted (SSRF allow-list), and every fetch is bounded.
 
 from __future__ import annotations
 
+import base64
 import csv
 import io
 import json
@@ -41,6 +43,19 @@ STRUCTURED_BYTE_LIMIT = 1048576  # 1 MB
 TEXT_BYTE_LIMIT = 262144         # 256 KB
 MAX_TABLE_ROWS = 100
 MAX_ZIP_ENTRIES = 200
+
+#: Uncompressed ceiling for one ZIP member read into memory (10 MB).
+MAX_ZIP_MEMBER_BYTES = 10485760
+#: An image extracted from a ZIP is base64-inlined; keep the payload small.
+MAX_INNER_IMAGE_BYTES = 4194304
+
+IMAGE_MIME_TYPES = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+}
 
 #: One Range read coalesces the whole ZIP central directory into a few calls.
 #: Reads near the end of the archive are aligned to the last block, so the
@@ -256,9 +271,8 @@ def _drop_incomplete_line(raw: bytes) -> bytes:
 # ---------------------------------------------------------------------------
 # Per-format previews
 # ---------------------------------------------------------------------------
-def _preview_table(url: str, ext: str) -> Dict[str, Any]:
-    """First 256 KB of a CSV/TSV as a header row plus at most 100 rows."""
-    raw, truncated = _fetch_bytes(url, TABULAR_BYTE_LIMIT)
+def _parse_table_bytes(raw: bytes, truncated: bool, ext: str) -> Dict[str, Any]:
+    """Header row plus at most 100 rows from an already bounded CSV/TSV buffer."""
     if truncated:
         raw = _drop_incomplete_line(raw)
     text = _decode(raw)
@@ -293,9 +307,8 @@ def _preview_table(url: str, ext: str) -> Dict[str, Any]:
     }
 
 
-def _preview_structured(url: str) -> Dict[str, Any]:
-    """Up to 1 MB of JSON: GeoJSON is handed over raw, anything else pretty."""
-    raw, truncated = _fetch_bytes(url, STRUCTURED_BYTE_LIMIT)
+def _parse_structured_bytes(raw: bytes, truncated: bool) -> Dict[str, Any]:
+    """JSON/GeoJSON from a bounded buffer; unparsable input degrades to text."""
     text = _decode(raw)
     try:
         parsed = json.loads(text)
@@ -309,10 +322,27 @@ def _preview_structured(url: str) -> Dict[str, Any]:
     }
 
 
+def _parse_text_bytes(raw: bytes, truncated: bool) -> Dict[str, Any]:
+    """Plain text, Markdown or YAML from an already bounded buffer."""
+    return {"kind": "text", "truncated": truncated, "content": _decode(raw)}
+
+
+def _preview_table(url: str, ext: str) -> Dict[str, Any]:
+    """First 256 KB of a CSV/TSV as a header row plus at most 100 rows."""
+    raw, truncated = _fetch_bytes(url, TABULAR_BYTE_LIMIT)
+    return _parse_table_bytes(raw, truncated, ext)
+
+
+def _preview_structured(url: str) -> Dict[str, Any]:
+    """Up to 1 MB of JSON: GeoJSON is handed over raw, anything else pretty."""
+    raw, truncated = _fetch_bytes(url, STRUCTURED_BYTE_LIMIT)
+    return _parse_structured_bytes(raw, truncated)
+
+
 def _preview_text(url: str) -> Dict[str, Any]:
     """First 256 KB of a text, Markdown or YAML file."""
     raw, truncated = _fetch_bytes(url, TEXT_BYTE_LIMIT)
-    return {"kind": "text", "truncated": truncated, "content": _decode(raw)}
+    return _parse_text_bytes(raw, truncated)
 
 
 class _HttpRangeFile(io.RawIOBase):
@@ -501,13 +531,110 @@ def _preview_image(url: str) -> Dict[str, Any]:
     return {"kind": "image", "image_url": url}
 
 
+def _preview_zip_member(url: str, inner: str) -> Dict[str, Any]:
+    """Render one file stored inside a remote ZIP, reading only that member.
+
+    The central directory is reached through ``_HttpRangeFile``; only the member's
+    own compressed bytes travel over the wire, under the same per-format budgets
+    as a direct download. Unsupported extensions never open the archive.
+    """
+    ext = file_extension(inner)
+    if inner.endswith("/"):
+        raise PreviewError("Archive entry not found or is a directory.", 404)
+    if ext in TABULAR_EXTENSIONS:
+        limit = TABULAR_BYTE_LIMIT
+    elif ext in STRUCTURED_EXTENSIONS:
+        limit = STRUCTURED_BYTE_LIMIT
+    elif ext in TEXT_EXTENSIONS:
+        limit = TEXT_BYTE_LIMIT
+    elif ext in IMAGE_EXTENSIONS:
+        limit = MAX_INNER_IMAGE_BYTES
+    else:
+        return {
+            "kind": "unsupported",
+            "reason": UNSUPPORTED_BINARY_REASON,
+            "inner_path": inner,
+        }
+
+    with requests.Session() as session:
+        session.headers.update(_file_headers())
+        size = _remote_zip_size(url, session)
+        if not size:
+            return {
+                "kind": "unsupported",
+                "reason": NO_RANGE_REASON,
+                "inner_path": inner,
+            }
+        try:
+            with zipfile.ZipFile(_HttpRangeFile(url, size, session)) as archive:
+                info = archive.getinfo(inner)
+                if info.is_dir():
+                    raise PreviewError(
+                        "Archive entry not found or is a directory.", 404
+                    )
+                if (
+                    info.file_size > MAX_ZIP_MEMBER_BYTES
+                    or info.compress_size > MAX_ZIP_BYTES
+                ):
+                    raise PreviewError(
+                        "File inside archive is too large to preview in the browser.",
+                        413,
+                    )
+                with archive.open(info) as handle:
+                    raw = handle.read(limit + 1)
+        except KeyError as exc:
+            raise PreviewError(
+                "Archive entry not found or is a directory.", 404
+            ) from exc
+        except (zipfile.BadZipFile, OSError, RuntimeError) as exc:
+            logger.info("ZIP member preview failed for %s (%s): %s", url, inner, exc)
+            return {
+                "kind": "unsupported",
+                "reason": BAD_ZIP_REASON,
+                "inner_path": inner,
+            }
+
+    truncated = len(raw) > limit
+    raw = raw[:limit]
+    if ext in TABULAR_EXTENSIONS:
+        payload = _parse_table_bytes(raw, truncated, ext)
+    elif ext in STRUCTURED_EXTENSIONS:
+        payload = _parse_structured_bytes(raw, truncated)
+    elif ext in TEXT_EXTENSIONS:
+        payload = _parse_text_bytes(raw, truncated)
+    else:
+        if truncated:
+            return {
+                "kind": "unsupported",
+                "reason": "Image inside archive is too large to preview.",
+                "inner_path": inner,
+            }
+        mime = IMAGE_MIME_TYPES.get(ext, "application/octet-stream")
+        payload = {
+            "kind": "image",
+            "image_url": f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}",
+            "from_zip": True,
+        }
+    payload["inner_path"] = inner
+    return payload
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
-def build_preview(url: Any, name: Any = "") -> Dict[str, Any]:
-    """Classify one remote file by extension and return its bounded preview."""
+def build_preview(url: Any, name: Any = "", inner: Any = "") -> Dict[str, Any]:
+    """Classify one remote file by extension and return its bounded preview.
+
+    ``inner`` names a file stored inside a ``.zip`` archive: the archive URL is
+    the one validated against the allow-list, and only that member is read.
+    """
     target = validate_preview_url(url)
     filename = str(name or "").strip() or urlsplit(target).path.rsplit("/", 1)[-1]
+    inner_path = str(inner or "").strip()
+    if inner_path:
+        logger.debug("Preview member %s of %s", inner_path, filename)
+        return _preview_zip_member(target, inner_path)
+
     ext = file_extension(filename)
     logger.debug("Preview %s (%s)", filename, ext or "no extension")
 

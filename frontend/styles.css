@@ -1517,6 +1517,272 @@ body.preview-open {
   margin-left: 0;
 }
 
+/* ------------------------------------------- ZIP members and view toggles */
+.preview-inner-bar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.65rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--epfl-red);
+  border-radius: 8px;
+}
+
+.preview-back {
+  flex: 0 0 auto;
+  padding: 0.28rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--epfl-red);
+  background: var(--red-soft);
+  border: 1px solid rgba(226, 6, 19, 0.22);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.preview-back:hover {
+  background: #fde2e3;
+}
+
+.preview-back:focus-visible {
+  outline: 2px solid var(--epfl-red);
+  outline-offset: 1px;
+}
+
+.preview-inner-path {
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.preview-zip-row {
+  cursor: pointer;
+}
+
+.preview-table tbody tr.preview-zip-row:hover td {
+  background: var(--red-soft);
+}
+
+.preview-zip-action {
+  width: 1%;
+  text-align: right;
+}
+
+.preview-pill {
+  padding: 0.16rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--epfl-red);
+  background: var(--surface);
+  border: 1px solid rgba(226, 6, 19, 0.35);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.preview-pill:hover {
+  color: #ffffff;
+  background: var(--epfl-red);
+  border-color: var(--epfl-red);
+}
+
+.preview-pill:focus-visible {
+  outline: 2px solid var(--epfl-red);
+  outline-offset: 1px;
+}
+
+.preview-view-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 2px;
+  background: var(--gray-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.preview-view-toggle button {
+  padding: 0.25rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.preview-view-toggle button.is-active {
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.preview-view-toggle button:focus-visible {
+  outline: 2px solid var(--epfl-red);
+  outline-offset: 1px;
+}
+
+/* ---------------------------------------------------------- quick chart */
+.preview-axis {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.preview-axis select {
+  max-width: min(28ch, 40vw);
+  padding: 0.28rem 0.45rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+}
+
+.preview-axis select:focus-visible {
+  outline: 2px solid var(--epfl-red);
+  outline-offset: 1px;
+}
+
+.preview-chart {
+  padding: 0.5rem 0.65rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.preview-chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.preview-chart-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.preview-chart-line {
+  fill: none;
+  stroke: var(--epfl-red);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.preview-chart-dot {
+  fill: var(--epfl-red);
+}
+
+.preview-chart-dot:hover {
+  r: 5;
+}
+
+.preview-chart-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  fill: var(--ink-muted);
+}
+
+/* ------------------------------------------------------ rendered Markdown */
+.preview-markdown {
+  max-height: 58vh;
+  overflow: auto;
+  padding: 1rem 1.1rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--epfl-red);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+
+.preview-markdown h3,
+.preview-markdown h4,
+.preview-markdown h5 {
+  margin: 1rem 0 0.4rem;
+  line-height: 1.3;
+}
+
+.preview-markdown h3:first-child,
+.preview-markdown h4:first-child,
+.preview-markdown h5:first-child {
+  margin-top: 0;
+}
+
+.preview-markdown h3 {
+  font-size: 1.05rem;
+}
+
+.preview-markdown h4 {
+  font-size: 0.95rem;
+}
+
+.preview-markdown h5 {
+  font-size: 0.88rem;
+}
+
+.preview-markdown p {
+  margin: 0 0 0.65rem;
+}
+
+.preview-markdown ul {
+  margin: 0 0 0.65rem;
+  padding-left: 1.2rem;
+}
+
+.preview-markdown li {
+  margin-bottom: 0.2rem;
+}
+
+.preview-markdown a {
+  color: var(--epfl-red);
+}
+
+.preview-markdown code {
+  padding: 0.05rem 0.3rem;
+  font-family: var(--mono);
+  font-size: 0.8em;
+  background: var(--gray-soft);
+  border-radius: 4px;
+}
+
+.preview-md-code {
+  margin: 0 0 0.7rem;
+  padding: 0.7rem 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #e2e8f0;
+  background: #0f172a;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+
 @media (max-width: 720px) {
   .preview-modal {
     padding: 0.5rem;
@@ -1539,8 +1805,13 @@ body.preview-open {
   }
 
   .preview-table-wrap,
-  .preview-code {
+  .preview-code,
+  .preview-markdown {
     max-height: 52vh;
+  }
+
+  .preview-axis select {
+    max-width: 100%;
   }
 
   .preview-map {

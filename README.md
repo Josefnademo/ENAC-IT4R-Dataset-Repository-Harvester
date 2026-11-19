@@ -42,7 +42,7 @@ through their public APIs, anonymously, within their published rate limits.
 │  ├─ storage.py                   SQLite + atomic JSON mirror
 │  ├─ logger.py                    ring-buffer logger feeding the console
 │  └─ server.py                    threading HTTP server, static + JSON API
-├─ frontend/                       index.html, styles.css, app.js (no build step)
+├─ frontend/                       index.html, styles.css, preview.js, app.js (no build step)
 ├─ docs/
 │  ├─ TECHNICAL_ARCHITECTURE.md    end-to-end design and verified API behaviour
 │  └─ recon/                       Phase 1 probe artefacts (evidence for the taxonomy)
@@ -94,7 +94,7 @@ records up on the next refresh.
 | Endpoint | Purpose |
 |---|---|
 | `GET /api/data` | Snapshot from SQLite: `items`, `last_run`, `runs`, `filters`, `default_filter` |
-| `GET /api/preview?url=<encoded_file_url>&name=<filename>` | Bounded preview of one record file (400 for any host outside `zenodo.org` / `infoscience.epfl.ch`, 502 when the repository cannot be reached) |
+| `GET /api/preview?url=<encoded_file_url>&name=<filename>[&inner=<path_inside_zip>]` | Bounded preview of one record file, or of one file stored inside a remote ZIP (400 for any host outside `zenodo.org` / `infoscience.epfl.ch`, 404 for an unknown archive member, 413 when a member exceeds the in-memory budget, 502 when the repository cannot be reached) |
 | `GET /api/record-files?id=<canonical_id>` | Resolves the file inventory of a record stored without preview `entries`, caches it in SQLite + JSON mirror, and returns `{"canonical_id", "file_summary"}` (404 for a non-Zenodo record, 502 when Zenodo cannot be reached) |
 | `GET /api/harvest?from=YYYY-MM-DD&to=YYYY-MM-DD&type=dataset` | Runs one live harvest (409 when a harvest is already running, 400 on bad input) |
 | `GET /api/logs?since=<cursor>` | Incremental console entries plus the new cursor |
@@ -109,18 +109,25 @@ Every card whose record reports files carries a **Preview Data** badge in its fo
 It opens a modal overlay that inspects one file at a time without downloading the
 record: the overlay has a sticky header with the record title, a file selector (when
 the record lists several files), the file-size badge, a direct download link, and it
-closes with the button, `Escape` or a click on the backdrop.
+closes with the button, `Escape` or a click on the backdrop. The whole overlay lives in
+`frontend/preview.js` (loaded before `app.js`, still plain ES2017 with no build step),
+so `app.js` only keeps the dashboard: cards, filters, exports and polling.
 
 `GET /api/preview` only reads a hard byte budget per format:
 
 | File | Preview |
 |---|---|
-| `.csv`, `.tsv` | First **256 KB**, decoded UTF-8 (latin-1 fallback), delimiter auto-detected, header row + at most **100 rows**. The overlay renders a sticky-header table with row numbers, a client-side row filter and a truncation banner |
+| `.csv`, `.tsv` | First **256 KB**, decoded UTF-8 (latin-1 fallback), delimiter auto-detected, header row + at most **100 rows**. The overlay renders a sticky-header table with row numbers, a client-side row filter and a truncation banner, plus a **Quick Chart** view (inline SVG, no library) with X/Y column pickers over the first 100 rows |
 | `.geojson`, `.json` | First **1 MB**. GeoJSON (`FeatureCollection`, `Feature`, `GeometryCollection`, standard geometries) is rendered on a Leaflet map (loaded lazily from unpkg only when needed, with a formatted-JSON fallback when offline); other JSON is pretty-printed |
-| `.txt`, `.md`, `.yml`, `.yaml` | First **256 KB** in a monospace viewer |
-| `.zip` | The **central directory only**, read through HTTP `Range` requests (HEAD/Content-Range probe + seekable remote file wrapper), so a 17 GB archive lists its entries with one 1 MB range request. Up to 200 entries: path, extension badge, uncompressed size; archives whose directory would exceed a 12 MB metadata budget are refused with HTTP 413 |
-| `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg` | Hot-linked full-resolution image |
+| `.txt`, `.md`, `.yml`, `.yaml` | First **256 KB**. `.md` files are formatted by default (headings, bold, inline/fenced code, bullet lists, clickable links — every character escaped before formatting) with a **Rendered \| Raw** toggle; other text is a monospace viewer |
+| `.zip` | The **central directory only**, read through HTTP `Range` requests (HEAD/Content-Range probe + seekable remote file wrapper), so a 17 GB archive lists its entries with one 1 MB range request. Up to 200 entries: path, extension badge, uncompressed size, and a **Preview** pill on CSV/TSV/JSON/GeoJSON/text/Markdown/YAML/image members. Clicking one reads only that member (≤ 10 MB uncompressed, ≤ 12 MB compressed, ≤ 4 MB for inlined images) and shows it under a sticky **← Back to `<archive>` contents** breadcrumb; archives whose directory would exceed a 12 MB metadata budget are refused with HTTP 413 |
+| `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg` | Hot-linked full-resolution image (images extracted from a ZIP are inlined as a base64 data URI instead) |
 | `.nc`, `.zarr`, `.gpkg`, `.parquet`, `.h5`, … | Explicit "binary scientific format" notice with the direct download link |
+
+**Session cache.** `frontend/preview.js` keeps a bounded `Map` of the last 40 preview
+payloads keyed by `url + "::" + inner_path`. Opening a record, switching files,
+leaving a ZIP member with the breadcrumb or closing and reopening the modal therefore
+re-renders instantly with **zero network requests**; the cache lives only in the page.
 
 **Security.** The endpoint is a strict SSRF allow-list: only `https://` URLs whose
 hostname is `zenodo.org` or `infoscience.epfl.ch` are fetched; anything else is
